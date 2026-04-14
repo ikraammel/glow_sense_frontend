@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:ui'; // Nécessaire pour ImageFilter
+import 'dart:ui';
 
 class SkinScanPage extends StatefulWidget {
   const SkinScanPage({super.key});

@@ -198,7 +198,6 @@ class ProfilePage extends StatelessWidget {
           ),
           TextButton(
             onPressed: () {
-              // Déconnexion et retour à l'écran de Login
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
