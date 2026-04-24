@@ -1,0 +1,27 @@
+package com.smart_skin.smart_skin_app_backend.dto;
+
+import com.smart_skin.smart_skin_app_backend.enums.SkinType;
+import lombok.Data;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Data
+public class UserResponseDto {
+    private Long id;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String phoneNumber;
+    private LocalDate dateOfBirth;
+    private String profileImageUrl;
+    private SkinType skinType;
+    private String skinConcerns;
+    private String ethnicity;
+    private String routinePreference;
+    private String effortLevel;
+    private String sunExposure;
+    private boolean notificationsEnabled;
+    private boolean onboardingCompleted;
+    private LocalDateTime createdAt;
+}
