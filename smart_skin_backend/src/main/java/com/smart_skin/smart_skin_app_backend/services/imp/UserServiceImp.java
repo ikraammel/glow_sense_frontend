@@ -77,6 +77,12 @@ public class UserServiceImp implements UserService {
         User user = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur non trouvé"));
 
+        if (user.getDeletionRequestedAt() != null) {
+            user.setDeletionRequestedAt(null);
+            userRepository.save(user);
+            log.info("Account deletion cancelled for user {} upon re-login", user.getId());
+        }
+
         String accessToken = jwtUtil.generateToken(user);
         String refreshToken = jwtUtil.generateRefreshToken(user);
 

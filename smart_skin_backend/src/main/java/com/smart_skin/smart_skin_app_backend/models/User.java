@@ -66,6 +66,60 @@ public class User implements UserDetails {
     @Column
     private boolean notificationsEnabled = true;
 
+    @Column(nullable = false)
+    private boolean emailWeeklyDigest = true;
+
+    @Column(nullable = false)
+    private boolean emailAnalysisResults = true;
+
+    @Column(nullable = false)
+    private boolean emailSkincareTips = true;
+
+    @Column(nullable = false)
+    private boolean emailProductReviews = false;
+
+    @Column(nullable = false)
+    private boolean emailAccountUpdates = true;
+
+    @Column(nullable = false)
+    private boolean emailSecurityAlerts = true;
+
+    @Column(nullable = false)
+    private boolean emailPromotions = false;
+
+    @Column
+    private String digestDay = "Monday";
+
+    @Column
+    private String digestTime = "Morning";
+
+    @Column(nullable = false)
+    private boolean notifAnalysisReminders = true;
+
+    @Column(nullable = false)
+    private boolean notifWeeklyReports = true;
+
+    @Column(nullable = false)
+    private boolean notifNewRecommendations = true;
+
+    @Column(nullable = false)
+    private boolean notifRoutineReminders = false;
+
+    @Column(nullable = false)
+    private boolean notifProgressUpdates = true;
+
+    @Column(nullable = false)
+    private boolean notifProductAlerts = false;
+
+    @Column(nullable = false)
+    private boolean notifPromotionsPush = false;
+
+    @Column
+    private String reminderFrequency = "weekly";
+
+    @Column
+    private LocalDateTime deletionRequestedAt;
+
     @Column
     private String fcmToken; // Firebase Cloud Messaging token
 

@@ -22,6 +22,24 @@ public class UserResponseDto {
     private String effortLevel;
     private String sunExposure;
     private boolean notificationsEnabled;
+    private boolean emailWeeklyDigest;
+    private boolean emailAnalysisResults;
+    private boolean emailSkincareTips;
+    private boolean emailProductReviews;
+    private boolean emailAccountUpdates;
+    private boolean emailSecurityAlerts;
+    private boolean emailPromotions;
+    private String  digestDay;
+    private String  digestTime;
+    private boolean notifAnalysisReminders;
+    private boolean notifWeeklyReports;
+    private boolean notifNewRecommendations;
+    private boolean notifRoutineReminders;
+    private boolean notifProgressUpdates;
+    private boolean notifProductAlerts;
+    private boolean notifPromotionsPush;
+    private String  reminderFrequency;
+    private LocalDateTime deletionRequestedAt;
     private boolean onboardingCompleted;
     private LocalDateTime createdAt;
 }
