@@ -17,7 +17,9 @@ class _SignupScreenState extends State<SignupScreen> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final _confirmCtrl = TextEditingController();
+  
   bool _showPass = false;
+  bool _showConfirmPass = false;
 
   @override
   void dispose() {
@@ -46,7 +48,6 @@ class _SignupScreenState extends State<SignupScreen> {
               behavior: SnackBarBehavior.floating,
             ));
           } else if (state is AuthAuthenticated) {
-            // Success: Close the signup screen to let the router show onboarding
             Navigator.of(context).popUntil((route) => route.isFirst);
           }
         },
@@ -89,7 +90,11 @@ class _SignupScreenState extends State<SignupScreen> {
                       validator: (v) => (v?.length ?? 0) < 8 ? 'At least 8 characters' : null),
                   const SizedBox(height: 16),
                   _field(_confirmCtrl, "Confirm Password", Icons.lock_outline,
-                      obscure: true,
+                      obscure: !_showConfirmPass,
+                      suffix: IconButton(
+                        icon: Icon(_showConfirmPass ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
+                        onPressed: () => setState(() => _showConfirmPass = !_showConfirmPass),
+                      ),
                       validator: (v) => v != _passCtrl.text ? 'Passwords do not match' : null),
                   const SizedBox(height: 30),
                   BlocBuilder<AuthBloc, AuthState>(

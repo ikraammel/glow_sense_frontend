@@ -95,7 +95,7 @@ class SettingsScreen extends StatelessWidget {
               icon: Icons.gavel_outlined,
               iconBg: const Color(0xFFFFECB3),
               title: 'Terms of Service',
-              subtitle: 'Rules for using Smart Skin',
+              subtitle: 'Rules for using GlowSense',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()),

@@ -30,11 +30,11 @@ class TermsOfServiceScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 _buildTerm(
                   '1. Acceptance of Terms',
-                  'By creating an account or using Smart Skin, you agree to these Terms of Service. If you do not agree, please do not use the app. We may update these terms from time to time and will notify you of significant changes.',
+                  'By creating an account or using GlowSense, you agree to these Terms of Service. If you do not agree, please do not use the app. We may update these terms from time to time and will notify you of significant changes.',
                 ),
                 _buildTerm(
                   '2. App Purpose & Medical Disclaimer',
-                  'Smart Skin provides AI-powered skin analysis for informational and cosmetic guidance purposes ONLY. Our analysis is NOT a medical diagnosis. Always consult a qualified dermatologist or healthcare professional for medical skin conditions. We are not liable for decisions made based on our AI recommendations.',
+                  'GlowSense provides AI-powered skin analysis for informational and cosmetic guidance purposes ONLY. Our analysis is NOT a medical diagnosis. Always consult a qualified dermatologist or healthcare professional for medical skin conditions. We are not liable for decisions made based on our AI recommendations.',
                 ),
                 _buildTerm(
                   '3. Account Responsibilities',
@@ -42,15 +42,15 @@ class TermsOfServiceScreen extends StatelessWidget {
                 ),
                 _buildTerm(
                   '4. Intellectual Property',
-                  'All content, AI models, algorithms, and interfaces within Smart Skin are the exclusive property of Smart Skin Inc. You may not copy, modify, distribute, or reverse-engineer any part of our service.',
+                  'All content, AI models, algorithms, and interfaces within GlowSense are the exclusive property of GlowSense Inc. You may not copy, modify, distribute, or reverse-engineer any part of our service.',
                 ),
                 _buildTerm(
                   '5. User Content',
-                  'By uploading photos or content, you grant Smart Skin a limited license to process that content to provide you with the service. You retain full ownership of your photos. We will never use your personal photos for advertising or sell them.',
+                  'By uploading photos or content, you grant GlowSense a limited license to process that content to provide you with the service. You retain full ownership of your photos. We will never use your personal photos for advertising or sell them.',
                 ),
                 _buildTerm(
                   '6. Limitation of Liability',
-                  'Smart Skin is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the app, including reliance on AI-generated skin recommendations.',
+                  'GlowSense is provided "as is" without warranties of any kind. We are not liable for any indirect, incidental, or consequential damages arising from your use of the app, including reliance on AI-generated skin recommendations.',
                 ),
                 _buildTerm(
                   '7. Termination',
@@ -62,7 +62,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                 ),
                 _buildTerm(
                   '9. Contact',
-                  'Questions about these Terms? Contact us at legal@smartskin.app',
+                  'Questions about these Terms? Contact us at legal@glowsense.app',
                 ),
                 const SizedBox(height: 20),
                 _buildAcceptedBadge(),
@@ -97,7 +97,7 @@ class TermsOfServiceScreen extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Please read these terms carefully. They govern your use of the Smart Skin application and services.',
+            'Please read these terms carefully. They govern your use of the GlowSense application and services.',
             style: TextStyle(color: Colors.white60, fontSize: 13, height: 1.5),
           ),
         ],

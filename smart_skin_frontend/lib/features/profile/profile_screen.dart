@@ -12,6 +12,12 @@ import '../../constants/colors.dart';
 import '../../data/services/api_service.dart';
 import '../../data/models/user_model.dart';
 import '../../main.dart';
+import 'app_version_screen.dart';
+import 'email_preferences_screen.dart';
+import 'help_support_screen.dart';
+import 'notifications_settings_screen.dart';
+import 'privacy_policy_screen.dart';
+import 'terms_of_service_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -23,6 +29,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late TextEditingController _firstCtrl, _lastCtrl, _phoneCtrl;
   bool _isLoading = false;
   File? _newAvatar;
+
+  // Change Password Visibility
+  bool _oldPasswordVisible = false;
+  bool _newPasswordVisible = false;
 
   @override
   void initState() {
@@ -82,11 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _deleteAccount(BuildContext rootContext) async {
     final api = rootContext.read<ApiService>();
     try {
-      await api.deleteAccount();
+      await api.requestAccountDeletion();
       if (!mounted) return;
-      rootContext.read<AuthBloc>().add(const LogoutRequested());
+      rootContext.read<AuthBloc>().add(const CheckAuthStatus());
       messengerKey.currentState?.showSnackBar(const SnackBar(
-        content: Text("Account permanently deleted."),
+        content: Text("Suppression demandée. Votre compte sera supprimé dans 30 jours."),
         backgroundColor: AppColors.success,
       ));
     } catch (e) {
@@ -95,6 +105,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: AppColors.error,
       ));
     }
+  }
+
+  Future<void> _cancelDeletion(BuildContext rootContext) async {
+    final api = rootContext.read<ApiService>();
+    try {
+      await api.cancelAccountDeletion();
+      if (!mounted) return;
+      rootContext.read<AuthBloc>().add(const CheckAuthStatus());
+      messengerKey.currentState?.showSnackBar(const SnackBar(
+        content: Text("Suppression annulée !"),
+        backgroundColor: AppColors.success,
+      ));
+    } catch (e) {
+      messengerKey.currentState?.showSnackBar(SnackBar(
+        content: Text(e.toString()),
+        backgroundColor: AppColors.error,
+      ));
+    }
+  }
+
+  String _deletionDate(String deletionRequestedAt) {
+    final date = DateTime.parse(deletionRequestedAt).add(const Duration(days: 30));
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   @override
@@ -117,6 +150,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
+                        if (user != null && user.deletionRequestedAt != null)
+                          Container(
+                            margin: const EdgeInsets.only(bottom: 24),
+                            padding: const EdgeInsets.all(14),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade50,
+                              border: Border.all(color: Colors.orange.shade300),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Votre compte sera supprimé le ${_deletionDate(user.deletionRequestedAt!)}. ',
+                                        style: TextStyle(color: Colors.orange.shade800, fontSize: 13, fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      const Text(
+                                        'Reconnectez-vous avant cette date pour l\'annuler ou cliquez ci-dessous.',
+                                        style: TextStyle(color: Colors.orange, fontSize: 12),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => _cancelDeletion(rootContext),
+                                        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 30)),
+                                        child: const Text("Annuler la suppression", style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          
                         _buildHeader(user),
                         const SizedBox(height: 24),
                         _buildStatsRow(dashData),
@@ -132,17 +203,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           const SizedBox(height: 32),
                           _buildSectionTitle("Settings"),
                           const SizedBox(height: 12),
-                          _buildSettingsSection(rootContext),
+                          _buildSettingsSection(rootContext, user),
                           
                           const SizedBox(height: 32),
                           _buildSectionTitle("About"),
                           const SizedBox(height: 12),
-                          _buildAboutSection(),
+                          _buildAboutSection(rootContext),
 
                           const SizedBox(height: 32),
                           _buildSectionTitle("Danger Zone"),
                           const SizedBox(height: 12),
-                          _buildDangerZone(rootContext),
+                          _buildDangerZone(rootContext, user),
                           
                           const SizedBox(height: 40),
                           _buildSignOutButton(rootContext),
@@ -306,43 +377,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsSection(BuildContext rootContext) {
+  Widget _buildSettingsSection(BuildContext rootContext, UserModel? user) {
+    final notificationsEnabled = user?.notificationsEnabled ?? true;
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)]),
       child: Column(
         children: [
-          _settingTile(Icons.notifications_none_rounded, "Notifications", "Manage your alerts", () {}),
-          _settingTile(Icons.mail_outline_rounded, "Email Preferences", "Newsletter & updates", () {}),
+          _settingTile(Icons.notifications_none_rounded, "Notifications", "Manage your alerts", () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsSettingsScreen(initialEnabled: notificationsEnabled)));
+          }),
+          _settingTile(Icons.mail_outline_rounded, "Email Preferences", "Newsletter & updates", () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const EmailPreferencesScreen()));
+          }),
           _settingTile(Icons.lock_outline_rounded, "Change Password", "Security and access", () => _showChangePasswordDialog(rootContext)),
-          _settingTile(Icons.help_outline_rounded, "Help & Support", "FAQs and contact us", () {}),
+          _settingTile(Icons.help_outline_rounded, "Help & Support", "FAQs and contact us", () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportScreen()));
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildAboutSection() {
+  Widget _buildAboutSection(BuildContext rootContext) {
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)]),
       child: Column(
         children: [
-          _settingTile(Icons.description_outlined, "Terms of Service", "Legal agreements", () {}),
-          _settingTile(Icons.privacy_tip_outlined, "Privacy Policy", "How we protect your data", () {}),
-          _settingTile(Icons.info_outline_rounded, "App Version", "v1.2.0", () {}),
+          _settingTile(Icons.description_outlined, "Terms of Service", "Legal agreements", () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()));
+          }),
+          _settingTile(Icons.privacy_tip_outlined, "Privacy Policy", "How we protect your data", () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
+          }),
+          _settingTile(Icons.info_outline_rounded, "App Version", "v1.0.0 (Build 42)", () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const AppVersionScreen()));
+          }),
         ],
       ),
     );
   }
 
-  Widget _buildDangerZone(BuildContext rootContext) {
+  Widget _buildDangerZone(BuildContext rootContext, UserModel? user) {
+    final isDeleting = user?.deletionRequestedAt != null;
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)]),
       child: Column(
         children: [
-          _settingTile(Icons.delete_forever_rounded, "Delete Account", "Permanently remove your data", 
-            () => _showDeleteConfirmation(rootContext), color: AppColors.error),
+          if (isDeleting)
+            _settingTile(Icons.undo_rounded, "Annuler la suppression", "Récupérer votre compte", 
+              () => _cancelDeletion(rootContext), color: Colors.orange)
+          else
+            _settingTile(Icons.delete_forever_rounded, "Delete Account", "Permanently remove your data", 
+              () => _showDeleteConfirmation(rootContext), color: AppColors.error),
         ],
       ),
     );
@@ -475,42 +564,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     showDialog(
       context: rootContext,
-      builder: (ctx) => AlertDialog(
-        title: const Text("Change Password"),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: oldCtrl, obscureText: true, 
-              decoration: InputDecoration(hintText: "Current password", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-            const SizedBox(height: 12),
-            TextField(controller: newCtrl, obscureText: true,
-              decoration: InputDecoration(hintText: "New password (min 8 chars)", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)))),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () async {
-              if (newCtrl.text.length < 8) return;
-              try {
-                await api.changePassword(oldCtrl.text, newCtrl.text);
-                if (rootContext.mounted) {
-                  Navigator.pop(ctx);
-                  messengerKey.currentState?.showSnackBar(const SnackBar(
-                    content: Text("Password changed successfully!"), backgroundColor: AppColors.success,
+      builder: (rootCtx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: const Text("Change Password"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: oldCtrl, 
+                obscureText: !_oldPasswordVisible, 
+                decoration: InputDecoration(
+                  hintText: "Current password", 
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  suffixIcon: IconButton(
+                    icon: Icon(_oldPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () => setDialogState(() => _oldPasswordVisible = !_oldPasswordVisible),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: newCtrl, 
+                obscureText: !_newPasswordVisible,
+                decoration: InputDecoration(
+                  hintText: "New password (min 8 chars)", 
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  suffixIcon: IconButton(
+                    icon: Icon(_newPasswordVisible ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () => setDialogState(() => _newPasswordVisible = !_newPasswordVisible),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () async {
+                if (newCtrl.text.length < 8) return;
+                try {
+                  await api.changePassword(oldCtrl.text, newCtrl.text);
+                  if (rootContext.mounted) {
+                    Navigator.pop(ctx);
+                    messengerKey.currentState?.showSnackBar(const SnackBar(
+                      content: Text("Password changed successfully!"), backgroundColor: AppColors.success,
+                    ));
+                  }
+                } catch (e) {
+                  messengerKey.currentState?.showSnackBar(SnackBar(
+                    content: Text(e.toString()), backgroundColor: AppColors.error,
                   ));
                 }
-              } catch (e) {
-                messengerKey.currentState?.showSnackBar(SnackBar(
-                  content: Text(e.toString()), backgroundColor: AppColors.error,
-                ));
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPink, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-            child: const Text("Change", style: TextStyle(color: Colors.white)),
-          ),
-        ],
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPink, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              child: const Text("Change", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }

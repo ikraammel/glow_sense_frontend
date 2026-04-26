@@ -53,7 +53,6 @@ class ApiService {
     ));
   }
 
-  // ── AUTH & USER ──────────────────────────────────────────
   Future<AuthResponse> login(String email, String password) async {
     try {
       final res = await _dio.post('/auth/login', data: {'email': email, 'password': password});
@@ -84,11 +83,7 @@ class ApiService {
 
   Future<void> verifyResetCode(String token) async {
     try { 
-      // Si votre backend a un endpoint de validation :
       await _dio.post('/auth/verify-reset-code', data: {'token': token}); 
-      
-      // Note: Si le backend n'a pas cet endpoint, on peut simuler ou 
-      // attendre l'appel final à reset-password.
     } on DioException catch (e) { throw _error(e); }
   }
 
@@ -98,7 +93,6 @@ class ApiService {
         'token': token,
         'newPassword': newPassword,
       });
-      // On suppose que le reset connecte l'utilisateur ou renvoie ses données
       return AuthResponse.fromJson(res.data['data'] ?? res.data);
     } on DioException catch (e) { throw _error(e); }
   }
@@ -131,12 +125,6 @@ class ApiService {
     } on DioException catch (e) { throw _error(e); }
   }
 
-  Future<void> deleteAccount() async {
-    try {
-      await _dio.delete('/auth/delete-account');
-    } on DioException catch (e) { throw _error(e); }
-  }
-
   Future<void> completeOnboarding(Map<String, dynamic> data) async {
     try {
       await _dio.post('/users/me/onboarding', data: data);
@@ -145,7 +133,39 @@ class ApiService {
     }
   }
 
-  // ── DASHBOARD ────────────────────────────────────────────
+
+  Future<UserModel> updateNotificationSettings(Map<String, dynamic> data) async {
+    try {
+      final res = await _dio.put('/settings/notification-settings', data: data);
+      return UserModel.fromJson(res.data['data'] ?? res.data);
+    } on DioException catch (e) { throw _error(e); }
+  }
+
+  Future<UserModel> updateEmailPreferences(Map<String, dynamic> data) async {
+    try {
+      final res = await _dio.put('/settings/email-preferences', data: data);
+      return UserModel.fromJson(res.data['data'] ?? res.data);
+    } on DioException catch (e) { throw _error(e); }
+  }
+
+  Future<Map<String, String>> getAppInfo() async {
+    try {
+      final res = await _dio.get('/settings/app-info');
+      final data = res.data['data'] ?? res.data;
+      return Map<String, String>.from(data);
+    } on DioException catch (e) { throw _error(e); }
+  }
+
+  Future<void> requestAccountDeletion() async {
+    try { await _dio.post('/settings/delete-account'); }
+    on DioException catch (e) { throw _error(e); }
+  }
+
+  Future<void> cancelAccountDeletion() async {
+    try { await _dio.delete('/settings/delete-account'); }
+    on DioException catch (e) { throw _error(e); }
+  }
+
   Future<DashboardModel> getDashboard() async {
     try {
       final res = await _dio.get('/dashboard');
@@ -153,7 +173,6 @@ class ApiService {
     } on DioException catch (e) { throw _error(e); }
   }
 
-  // ── ANALYSES ─────────────────────────────────────────────
   Future<SkinAnalysisModel> analyzeSkin(String imagePath) async {
     try {
       final formData = FormData.fromMap({
@@ -180,7 +199,6 @@ class ApiService {
     } on DioException catch (e) { throw _error(e); }
   }
 
-  // ── AI COACH ─────────────────────────────────────────────
   Future<CoachMessageModel> chatWithCoach(String message, String sessionId) async {
     try {
       final res = await _dio.post('/coach/chat', data: {'message': message, 'sessionId': sessionId});
@@ -196,7 +214,6 @@ class ApiService {
     } on DioException catch (e) { throw _error(e); }
   }
 
-  // ── NOTIFICATIONS ─────────────────────────────────────────
   Future<List<NotificationModel>> getNotifications({int page = 0, int size = 20}) async {
     try {
       final res = await _dio.get('/notifications', queryParameters: {'page': page, 'size': size});
@@ -204,6 +221,14 @@ class ApiService {
       return content.map((e) => NotificationModel.fromJson(e)).toList();
     } on DioException catch (e) { throw _error(e); }
   }
+
+  // Future<void> deleteAccount() async {
+  //   try {
+  //     await _dio.delete('/auth/delete-account');
+  //   } on DioException catch (e) {
+  //     throw _error(e);
+  //   }
+  // }
 
   Future<int> getUnreadCount() async {
     try {
@@ -222,7 +247,7 @@ class ApiService {
     on DioException catch (e) { throw _error(e); }
   }
 
-  // ── PRODUCTS ─────────────────────────────────────────────
+
   Future<ProductScanModel> scanProduct(ProductScanRequestModel request) async {
     try {
       final res = await _dio.post('/products/scan', data: request.toJson());
@@ -238,7 +263,6 @@ class ApiService {
     } on DioException catch (e) { throw _error(e); }
   }
 
-  // ── PRIVATE HELPERS ──────────────────────────────────────
   Future<bool> _tryRefreshToken() async {
     final refresh = _storage.getRefreshToken();
     if (refresh == null) return false;

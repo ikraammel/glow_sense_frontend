@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/services/api_service.dart';
 
 class AppVersionScreen extends StatefulWidget {
   const AppVersionScreen({super.key});
@@ -14,13 +16,8 @@ class _AppVersionScreenState extends State<AppVersionScreen>
   int _tapCount = 0;
   bool _devModeUnlocked = false;
 
-  static const String appVersion    = '1.0.0';
-  static const String buildNumber   = '42';
-  static const String releaseDate   = 'January 2025';
-  static const String minAndroid    = 'Android 8.0+';
-  static const String minIos        = 'iOS 14.0+';
-  static const String backendVersion = '1.0.0';
-  static const String apiVersion    = 'v1';
+  Map<String, String> _appInfo = {};
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -29,6 +26,21 @@ class _AppVersionScreenState extends State<AppVersionScreen>
     _scaleAnim = Tween<double>(begin: 1.0, end: 0.85).animate(
       CurvedAnimation(parent: _animCtrl, curve: Curves.easeInOut),
     );
+    _loadAppInfo();
+  }
+
+  Future<void> _loadAppInfo() async {
+    try {
+      final info = await context.read<ApiService>().getAppInfo();
+      if (mounted) {
+        setState(() {
+          _appInfo = info;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -59,7 +71,9 @@ class _AppVersionScreenState extends State<AppVersionScreen>
   }
 
   void _copyVersion() {
-    Clipboard.setData(const ClipboardData(text: 'Smart Skin v$appVersion (Build $buildNumber)'));
+    final version = _appInfo['appVersion'] ?? '1.0.0';
+    final build = _appInfo['buildNumber'] ?? '42';
+    Clipboard.setData(ClipboardData(text: 'GlowSense v$version (Build $build)'));
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
       content: Text('Version copied to clipboard'),
       backgroundColor: Color(0xFF888888),
@@ -70,6 +84,14 @@ class _AppVersionScreenState extends State<AppVersionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final version = _appInfo['appVersion'] ?? '1.0.0';
+    final build = _appInfo['buildNumber'] ?? '42';
+    final releaseDate = _appInfo['releaseDate'] ?? 'January 2025';
+    final minAndroid = _appInfo['minAndroid'] ?? 'Android 8.0+';
+    final minIos = _appInfo['minIos'] ?? 'iOS 14.0+';
+    final backendVersion = _appInfo['backendVersion'] ?? '1.0.0';
+    final apiVersion = _appInfo['apiVersion'] ?? 'v1';
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9FB),
       appBar: AppBar(
@@ -83,10 +105,11 @@ class _AppVersionScreenState extends State<AppVersionScreen>
           onPressed: () => Navigator.pop(context),
         ),
       ),
-      body: ListView(
+      body: _isLoading 
+        ? const Center(child: CircularProgressIndicator(color: Color(0xFFF1ABB9)))
+        : ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          // App Logo + Version
           Column(
             children: [
               GestureDetector(
@@ -116,7 +139,7 @@ class _AppVersionScreenState extends State<AppVersionScreen>
                 ),
               ),
               const SizedBox(height: 16),
-              const Text('Smart Skin',
+              const Text('GlowSense',
                   style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,
@@ -134,7 +157,7 @@ class _AppVersionScreenState extends State<AppVersionScreen>
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: const Color(0xFFF1ABB9).withOpacity(0.4)),
                   ),
-                  child: Text('Version $appVersion (Build $buildNumber)',
+                  child: Text('Version $version (Build $build)',
                       style: const TextStyle(
                           color: Color(0xFFE08499),
                           fontWeight: FontWeight.bold,
@@ -148,10 +171,9 @@ class _AppVersionScreenState extends State<AppVersionScreen>
           ),
 
           const SizedBox(height: 28),
-          // Version details
           _buildInfoCard('Release Info', [
             _infoRow(Icons.calendar_today_rounded, 'Release Date', releaseDate),
-            _infoRow(Icons.tag_rounded, 'Build Number', buildNumber),
+            _infoRow(Icons.tag_rounded, 'Build Number', build),
             _infoRow(Icons.api_rounded, 'API Version', apiVersion),
             _infoRow(Icons.dns_rounded, 'Backend Version', backendVersion),
           ]),
@@ -163,8 +185,7 @@ class _AppVersionScreenState extends State<AppVersionScreen>
           ]),
 
           const SizedBox(height: 16),
-          // What's New
-          _buildWhatsNew(),
+          _buildWhatsNew(version),
 
           if (_devModeUnlocked) ...[
             const SizedBox(height: 16),
@@ -172,7 +193,6 @@ class _AppVersionScreenState extends State<AppVersionScreen>
           ],
 
           const SizedBox(height: 20),
-          // Update check button
           SizedBox(
             width: double.infinity,
             height: 52,
@@ -188,7 +208,7 @@ class _AppVersionScreenState extends State<AppVersionScreen>
                       Text('Up to Date'),
                     ]),
                     content: const Text(
-                        'You are running the latest version of Smart Skin.'),
+                        'You are running the latest version of GlowSense.'),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(context),
@@ -211,7 +231,7 @@ class _AppVersionScreenState extends State<AppVersionScreen>
           ),
           const SizedBox(height: 12),
           const Center(
-            child: Text('© 2025 Smart Skin Inc. All rights reserved.',
+            child: Text('© 2025 GlowSense Inc. All rights reserved.',
                 style: TextStyle(color: Colors.grey, fontSize: 11)),
           ),
           const SizedBox(height: 30),
@@ -263,7 +283,7 @@ class _AppVersionScreenState extends State<AppVersionScreen>
     );
   }
 
-  Widget _buildWhatsNew() {
+  Widget _buildWhatsNew(String version) {
     final changes = [
       {'icon': '🚀', 'text': 'AI analysis engine v2 — 18% more accurate'},
       {'icon': '💬', 'text': 'New AI Skin Coach with memory'},
@@ -285,11 +305,11 @@ class _AppVersionScreenState extends State<AppVersionScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(children: [
-            Icon(Icons.new_releases_rounded, color: Colors.white, size: 20),
-            SizedBox(width: 8),
-            Text("What's New in v$appVersion",
-                style: TextStyle(
+          Row(children: [
+            const Icon(Icons.new_releases_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text("What's New in v$version",
+                style: const TextStyle(
                     color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
           ]),
           const SizedBox(height: 14),

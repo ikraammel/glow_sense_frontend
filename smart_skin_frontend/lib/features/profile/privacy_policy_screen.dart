@@ -58,7 +58,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           _buildSection(
             '7. Contact Us',
             Icons.email_rounded,
-            'For privacy-related questions or requests, contact our Data Protection Officer at privacy@smartskin.app or write to: Smart Skin Inc., Privacy Department.',
+            'For privacy-related questions or requests, contact our Data Protection Officer at privacy@glowsense.app or write to: GlowSense Inc., Privacy Department.',
           ),
           const SizedBox(height: 20),
           Container(
@@ -117,7 +117,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
           ),
           SizedBox(height: 6),
           Text(
-            'Smart Skin is committed to protecting your personal data and being transparent about how we use it.',
+            'GlowSense is committed to protecting your personal data and being transparent about how we use it.',
             style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.5),
           ),
         ],

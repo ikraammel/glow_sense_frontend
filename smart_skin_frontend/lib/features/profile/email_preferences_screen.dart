@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/services/api_service.dart';
 import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/auth/auth_event.dart';
 import '../../bloc/auth/auth_state.dart';
 
 class EmailPreferencesScreen extends StatefulWidget {
@@ -12,35 +14,73 @@ class EmailPreferencesScreen extends StatefulWidget {
 class _EmailPreferencesScreenState extends State<EmailPreferencesScreen> {
   bool _isSaving = false;
 
-  bool _weeklyDigest     = true;
-  bool _analysisResults  = true;
-  bool _productReviews   = false;
-  bool _skincareTips     = true;
-  bool _promotions       = false;
-  bool _accountUpdates   = true;
-  bool _securityAlerts   = true;
+  late bool _weeklyDigest;
+  late bool _analysisResults;
+  late bool _productReviews;
+  late bool _skincareTips;
+  late bool _promotions;
+  late bool _accountUpdates;
+  late bool _securityAlerts;
 
-  String _digestDay = 'Monday';
-  String _digestTime = 'Morning';
+  late String _digestDay;
+  late String _digestTime;
 
   final List<String> _days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   final List<String> _times = ['Morning', 'Afternoon', 'Evening'];
 
+  @override
+  void initState() {
+    super.initState();
+    final user = (context.read<AuthBloc>().state as AuthAuthenticated?)?.user;
+    
+    _weeklyDigest = user?.emailWeeklyDigest ?? true;
+    _analysisResults = user?.emailAnalysisResults ?? true;
+    _productReviews = user?.emailProductReviews ?? false;
+    _skincareTips = user?.emailSkincareTips ?? true;
+    _promotions = user?.emailPromotions ?? false;
+    _accountUpdates = user?.emailAccountUpdates ?? true;
+    _securityAlerts = user?.emailSecurityAlerts ?? true;
+    _digestDay = user?.digestDay ?? 'Monday';
+    _digestTime = user?.digestTime ?? 'Morning';
+  }
+
   Future<void> _save() async {
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Row(children: [
-          Icon(Icons.check_circle_rounded, color: Colors.white),
-          SizedBox(width: 8),
-          Text('Email preferences saved!'),
-        ]),
-        backgroundColor: Color(0xFF4CAF50),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-      ));
-      setState(() => _isSaving = false);
+    try {
+      final updated = await context.read<ApiService>().updateEmailPreferences({
+        'weeklyDigest': _weeklyDigest,
+        'analysisResults': _analysisResults,
+        'skincareTips': _skincareTips,
+        'productReviews': _productReviews,
+        'accountUpdates': _accountUpdates,
+        'promotions': _promotions,
+        'digestDay': _digestDay,
+        'digestTime': _digestTime,
+      });
+      
+      if (mounted) {
+        context.read<AuthBloc>().add(AuthUserUpdated(updated));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Row(children: [
+            Icon(Icons.check_circle_rounded, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Email preferences saved!'),
+          ]),
+          backgroundColor: Color(0xFF4CAF50),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+        ));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: const Color(0xFFE53935),
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -230,7 +270,10 @@ class _EmailPreferencesScreenState extends State<EmailPreferencesScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
-            child: const Text('Unsubscribe from All Emails', fontWeight: FontWeight.w500),
+            child: const Text(
+                'Unsubscribe from All Emails',
+                style: TextStyle(fontWeight: FontWeight.w500),
+            )
           ),
           const SizedBox(height: 30),
         ],

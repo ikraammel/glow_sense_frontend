@@ -16,6 +16,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutRequested>(_logout);
     on<ForgotPasswordRequested>(_forgotPassword);
     on<ResetPasswordRequested>(_resetPassword);
+    on<AuthUserUpdated>(_onUserUpdated);
   }
 
   Future<void> _checkAuth(CheckAuthStatus e, Emitter<AuthState> emit) async {
@@ -73,10 +74,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
     try {
       await _api.resetPassword(e.token, e.newPassword);
-      // Emission de l'état ResetPasswordSuccess au lieu de AuthAuthenticated pour permettre l'affichage du message et la navigation vers login
       emit(const ResetPasswordSuccess());
     } catch (err) {
       emit(AuthFailure(message: err.toString()));
+    }
+  }
+
+  void _onUserUpdated(AuthUserUpdated event, Emitter<AuthState> emit) {
+    if (state is AuthAuthenticated) {
+      final current = state as AuthAuthenticated;
+      emit(AuthAuthenticated(
+        user: event.user,
+        needsOnboarding: current.needsOnboarding,
+      ));
     }
   }
 }

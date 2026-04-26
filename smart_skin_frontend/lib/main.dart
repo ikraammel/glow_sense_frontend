@@ -22,14 +22,14 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final storage = LocalStorageService(prefs: prefs);
   final api = ApiService(storage);
-  runApp(SmartSkinApp(api: api, storage: storage));
+  runApp(GlowSenseApp(api: api, storage: storage));
 }
 
-class SmartSkinApp extends StatelessWidget {
+class GlowSenseApp extends StatelessWidget {
   final ApiService api;
   final LocalStorageService storage;
 
-  const SmartSkinApp({super.key, required this.api, required this.storage});
+  const GlowSenseApp({super.key, required this.api, required this.storage});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +47,7 @@ class SmartSkinApp extends StatelessWidget {
           BlocProvider(create: (_) => NotificationBloc(api: api)),
         ],
         child: MaterialApp(
-          title: 'Smart Skin',
+          title: 'GlowSense',
           debugShowCheckedModeBanner: false,
           scaffoldMessengerKey: messengerKey,
           theme: ThemeData(
@@ -86,7 +86,7 @@ class _AppRouter extends StatelessWidget {
                   child: Icon(Icons.auto_awesome, size: 40, color: Colors.white),
                 ),
                 SizedBox(height: 20),
-                Text("Smart Skin", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text("GlowSense", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                 SizedBox(height: 16),
                 CircularProgressIndicator(color: AppColors.primaryPink),
               ]),

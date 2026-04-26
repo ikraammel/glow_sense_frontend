@@ -150,13 +150,3 @@ class NotificationApiService {
   }
 }
 
-class ReportApiService {
-  final ApiService _api;
-  ReportApiService(this._api);
-
-  Future<List<SkinReport>> getReports() async {
-    // Placeholder to use _api and avoid warning. 
-    // Implementation can be added when ApiService supports reports.
-    return [];
-  }
-}

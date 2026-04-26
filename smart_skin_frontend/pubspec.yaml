@@ -1,5 +1,5 @@
-name: smart_skin_app
-description: Smart Skin AI - Application de soin cutané intelligente
+name: glowsense_app
+description: GlowSense AI - Application de soin cutané intelligente
 publish_to: 'none'
 version: 1.0.0+1
 

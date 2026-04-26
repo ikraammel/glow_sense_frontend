@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/services/api_service.dart';
+import '../../bloc/auth/auth_bloc.dart';
+import '../../bloc/auth/auth_event.dart';
+import '../../bloc/auth/auth_state.dart';
 
 class NotificationsSettingsScreen extends StatefulWidget {
   final bool initialEnabled;
@@ -14,30 +17,50 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
 
   // Notification toggles
   late bool _allNotifications;
-  bool _analysisReminders = true;
-  bool _weeklyReports = true;
-  bool _newRecommendations = true;
-  bool _routineReminders = false;
-  bool _progressUpdates = true;
-  bool _productAlerts = false;
-  bool _promotions = false;
+  late bool _analysisReminders;
+  late bool _weeklyReports;
+  late bool _newRecommendations;
+  late bool _routineReminders;
+  late bool _progressUpdates;
+  late bool _productAlerts;
+  late bool _promotions;
 
   // Reminder frequency
-  String _reminderFrequency = 'weekly';
+  late String _reminderFrequency;
 
   @override
   void initState() {
     super.initState();
-    _allNotifications = widget.initialEnabled;
+    final user = (context.read<AuthBloc>().state as AuthAuthenticated?)?.user;
+    
+    _allNotifications = user?.notificationsEnabled ?? widget.initialEnabled;
+    _analysisReminders = user?.notifAnalysisReminders ?? true;
+    _weeklyReports = user?.notifWeeklyReports ?? true;
+    _newRecommendations = user?.notifNewRecommendations ?? true;
+    _routineReminders = user?.notifRoutineReminders ?? false;
+    _progressUpdates = user?.notifProgressUpdates ?? true;
+    _productAlerts = user?.notifProductAlerts ?? false;
+    _promotions = user?.notifPromotionsPush ?? false;
+    _reminderFrequency = user?.reminderFrequency ?? 'weekly';
   }
 
   Future<void> _saveSettings() async {
     setState(() => _isSaving = true);
     try {
-      await context.read<ApiService>().updateProfile({
-        'notificationsEnabled': _allNotifications,
+      final updated = await context.read<ApiService>().updateNotificationSettings({
+        'allNotifications': _allNotifications,
+        'analysisReminders': _analysisReminders,
+        'weeklyReports': _weeklyReports,
+        'newRecommendations': _newRecommendations,
+        'routineReminders': _routineReminders,
+        'progressUpdates': _progressUpdates,
+        'productAlerts': _productAlerts,
+        'promotionsPush': _promotions,
+        'reminderFrequency': _reminderFrequency,
       });
+      
       if (mounted) {
+        context.read<AuthBloc>().add(AuthUserUpdated(updated));
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Row(children: [
             Icon(Icons.check_circle_rounded, color: Colors.white),
@@ -123,7 +146,7 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
               'New Recommendations',
               'When new skincare tips are available for you',
               Icons.lightbulb_outline_rounded,
-              _weeklyReports, // Changed from _newRecommendations to _weeklyReports in provided code, but I'll fix it if it looks like a typo. Actually looking at provided code it says _newRecommendations = v below.
+              _newRecommendations,
               (v) => setState(() => _newRecommendations = v),
               enabled: _allNotifications,
             ),
@@ -190,7 +213,7 @@ class _NotificationsSettingsScreenState extends State<NotificationsSettingsScree
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Push notifications must also be enabled in your device Settings > Apps > Smart Skin.',
+                    'Push notifications must also be enabled in your device Settings > Apps > GlowSense.',
                     style: TextStyle(color: Colors.blueGrey, fontSize: 12, height: 1.5),
                   ),
                 ),
