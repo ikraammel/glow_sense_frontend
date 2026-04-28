@@ -24,7 +24,7 @@ class _DashboardTabState extends State<DashboardTab> {
   @override
   Widget build(BuildContext context) {
     final authState = context.watch<AuthBloc>().state;
-    final userName = authState is AuthAuthenticated ? authState.user.firstName : 'there';
+    final userName = authState is AuthAuthenticated ? authState.user.firstName : 'à toi';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -41,7 +41,7 @@ class _DashboardTabState extends State<DashboardTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header
-                    const Text("Good morning,", style: TextStyle(fontSize: 16, color: AppColors.textGrey)),
+                    const Text("Bienvenue,", style: TextStyle(fontSize: 16, color: AppColors.textGrey)),
                     Text("$userName ✨", style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                     const SizedBox(height: 24),
 
@@ -54,7 +54,7 @@ class _DashboardTabState extends State<DashboardTab> {
                       _buildSkinHealthCard(0),
 
                     const SizedBox(height: 30),
-                    const Text("Quick Actions", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                    const Text("Actions Rapides", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                     const SizedBox(height: 16),
 
                     // Quick Actions Row
@@ -63,8 +63,8 @@ class _DashboardTabState extends State<DashboardTab> {
                         _buildQuickAction(
                           context,
                           Icons.camera_alt_rounded,
-                          "Scan Skin",
-                          "Analyze now",
+                          "Scanner Peau",
+                          "Analyser maintenant",
                           const Color(0xFFFCE4EC), // Light Pink
                           const AnalysisScreen(),
                         ),
@@ -72,8 +72,8 @@ class _DashboardTabState extends State<DashboardTab> {
                         _buildQuickAction(
                           context,
                           Icons.qr_code_scanner_rounded,
-                          "Scan Product",
-                          "Check safety",
+                          "Scanner Produit",
+                          "Vérifier la sécurité",
                           const Color(0xFFE3F2FD), // Light Blue
                           const ProductScanScreen(),
                         ),
@@ -81,7 +81,7 @@ class _DashboardTabState extends State<DashboardTab> {
                     ),
 
                     const SizedBox(height: 30),
-                    const Text("Daily Tip", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                    const Text("Conseil du Jour", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
                     const SizedBox(height: 16),
 
                     // Daily Tip Card
@@ -99,10 +99,10 @@ class _DashboardTabState extends State<DashboardTab> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text("UV Protection", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                Text("Protection UV", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                                 SizedBox(height: 4),
                                 Text(
-                                  "Even on cloudy days, UV rays can reach your skin. Always apply SPF 30+ to prevent premature aging.",
+                                  "Même par temps nuageux, les rayons UV peuvent atteindre votre peau. Appliquez toujours un SPF 30+ pour prévenir le vieillissement prématuré.",
                                   style: TextStyle(fontSize: 13, color: Colors.black87, height: 1.4),
                                 ),
                               ],
@@ -123,10 +123,10 @@ class _DashboardTabState extends State<DashboardTab> {
   }
 
   Widget _buildSkinHealthCard(int score) {
-    String message = "Start your first analysis!";
-    if (score >= 80) message = "Great progress! Your skin is glowing.";
-    else if (score >= 50) message = "Good effort! Follow your routine for better results.";
-    else if (score > 0) message = "Time for some self-care. Check your recommendations.";
+    String message = "Commencez votre première analyse !";
+    if (score >= 80) message = "Excellents progrès ! Votre peau est en bonne santé.";
+    else if (score >= 50) message = "Bel effort ! Suivez votre routine pour de meilleurs résultats.";
+    else if (score > 0) message = "Il est temps de prendre soin de vous. Consultez vos recommandations.";
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -148,7 +148,7 @@ class _DashboardTabState extends State<DashboardTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("Your Skin Health", style: TextStyle(fontSize: 14, color: Colors.white70)),
+                const Text("Santé de votre peau", style: TextStyle(fontSize: 14, color: Colors.white70)),
                 const SizedBox(height: 4),
                 Text("$score%", style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.white)),
                 const SizedBox(height: 12),

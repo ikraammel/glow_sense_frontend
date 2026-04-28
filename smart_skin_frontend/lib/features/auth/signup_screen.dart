@@ -48,7 +48,8 @@ class _SignupScreenState extends State<SignupScreen> {
               behavior: SnackBarBehavior.floating,
             ));
           } else if (state is AuthAuthenticated) {
-            Navigator.of(context).popUntil((route) => route.isFirst);
+            // Le main.dart gère la navigation vers le Dashboard/Onboarding
+            Navigator.of(context).pop();
           }
         },
         child: SafeArea(
@@ -59,43 +60,43 @@ class _SignupScreenState extends State<SignupScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Create Account", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                  const Text("Start your personalized skincare journey",
+                  const Text("Créer un compte", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                  const Text("Commencez votre parcours de soins personnalisé dès aujourd'hui",
                       style: TextStyle(color: AppColors.textGrey, fontSize: 15)),
                   const SizedBox(height: 30),
                   Row(
                     children: [
-                      Expanded(child: _field(_firstCtrl, "First Name", Icons.person_outline,
-                          validator: (v) => (v?.isEmpty ?? true) ? 'Required' : null)),
+                      Expanded(child: _field(_firstCtrl, "Prénom", Icons.person_outline,
+                          validator: (v) => (v?.isEmpty ?? true) ? 'Requis' : null)),
                       const SizedBox(width: 12),
-                      Expanded(child: _field(_lastCtrl, "Last Name", Icons.person_outline,
-                          validator: (v) => (v?.isEmpty ?? true) ? 'Required' : null)),
+                      Expanded(child: _field(_lastCtrl, "Nom", Icons.person_outline,
+                          validator: (v) => (v?.isEmpty ?? true) ? 'Requis' : null)),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _field(_emailCtrl, "Email", Icons.email_outlined,
+                  _field(_emailCtrl, "Adresse e-mail", Icons.email_outlined,
                       type: TextInputType.emailAddress,
                       validator: (v) {
-                        if (v?.isEmpty ?? true) return 'Required';
-                        if (!(v!.contains('@'))) return 'Invalid email';
+                        if (v?.isEmpty ?? true) return 'Requis';
+                        if (!(v!.contains('@'))) return 'E-mail invalide';
                         return null;
                       }),
                   const SizedBox(height: 16),
-                  _field(_passCtrl, "Password", Icons.lock_outline,
+                  _field(_passCtrl, "Mot de passe", Icons.lock_outline,
                       obscure: !_showPass,
                       suffix: IconButton(
                         icon: Icon(_showPass ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
                         onPressed: () => setState(() => _showPass = !_showPass),
                       ),
-                      validator: (v) => (v?.length ?? 0) < 8 ? 'At least 8 characters' : null),
+                      validator: (v) => (v?.length ?? 0) < 8 ? 'Au moins 8 caractères' : null),
                   const SizedBox(height: 16),
-                  _field(_confirmCtrl, "Confirm Password", Icons.lock_outline,
+                  _field(_confirmCtrl, "Confirmer le mot de passe", Icons.lock_outline,
                       obscure: !_showConfirmPass,
                       suffix: IconButton(
                         icon: Icon(_showConfirmPass ? Icons.visibility : Icons.visibility_off, color: Colors.grey),
                         onPressed: () => setState(() => _showConfirmPass = !_showConfirmPass),
                       ),
-                      validator: (v) => v != _passCtrl.text ? 'Passwords do not match' : null),
+                      validator: (v) => v != _passCtrl.text ? 'Les mots de passe ne correspondent pas' : null),
                   const SizedBox(height: 30),
                   BlocBuilder<AuthBloc, AuthState>(
                     builder: (context, state) => SizedBox(
@@ -120,7 +121,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         child: state is AuthLoading
                             ? const SizedBox(height: 20, width: 20,
                                 child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text("Create Account", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            : const Text("S'inscrire", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ),

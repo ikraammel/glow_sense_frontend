@@ -26,13 +26,9 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isEditing = false;
-  late TextEditingController _firstCtrl, _lastCtrl, _phoneCtrl;
+  late TextEditingController _firstCtrl, _lastCtrl, _emailCtrl;
   bool _isLoading = false;
   File? _newAvatar;
-
-  // Change Password Visibility
-  bool _oldPasswordVisible = false;
-  bool _newPasswordVisible = false;
 
   @override
   void initState() {
@@ -41,7 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = auth is AuthAuthenticated ? auth.user : null;
     _firstCtrl = TextEditingController(text: user?.firstName ?? '');
     _lastCtrl = TextEditingController(text: user?.lastName ?? '');
-    _phoneCtrl = TextEditingController(text: user?.phoneNumber ?? '');
+    _emailCtrl = TextEditingController(text: user?.email ?? '');
     context.read<DashboardBloc>().add(const LoadDashboard());
   }
 
@@ -49,33 +45,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void dispose() {
     _firstCtrl.dispose();
     _lastCtrl.dispose();
-    _phoneCtrl.dispose();
+    _emailCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _saveProfile(BuildContext rootContext) async {
+  Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
     try {
-      final api = rootContext.read<ApiService>();
+      final api = context.read<ApiService>();
       if (_newAvatar != null) {
         await api.uploadAvatar(_newAvatar!.path);
       }
+      // On n'envoie plus l'email car il est en lecture seule
       await api.updateProfile({
         'firstName': _firstCtrl.text.trim(),
         'lastName': _lastCtrl.text.trim(),
-        'phoneNumber': _phoneCtrl.text.trim(),
       });
       
       if (!mounted) return;
       
-      rootContext.read<AuthBloc>().add(const CheckAuthStatus());
+      context.read<AuthBloc>().add(const CheckAuthStatus());
       setState(() {
         _isEditing = false;
         _newAvatar = null;
       });
       
       messengerKey.currentState?.showSnackBar(const SnackBar(
-        content: Text("Profile updated!"),
+        content: Text("Profil mis à jour !"),
         backgroundColor: AppColors.success,
       ));
     } catch (e) {
@@ -89,17 +85,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _deleteAccount(BuildContext rootContext) async {
-    final api = rootContext.read<ApiService>();
+  Future<void> _deleteAccount() async {
+    final api = context.read<ApiService>();
     try {
       await api.requestAccountDeletion();
       if (!mounted) return;
-      rootContext.read<AuthBloc>().add(const CheckAuthStatus());
+      context.read<AuthBloc>().add(const CheckAuthStatus());
       messengerKey.currentState?.showSnackBar(const SnackBar(
         content: Text("Suppression demandée. Votre compte sera supprimé dans 30 jours."),
         backgroundColor: AppColors.success,
       ));
     } catch (e) {
+      if (!mounted) return;
       messengerKey.currentState?.showSnackBar(SnackBar(
         content: Text(e.toString()),
         backgroundColor: AppColors.error,
@@ -107,17 +104,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _cancelDeletion(BuildContext rootContext) async {
-    final api = rootContext.read<ApiService>();
+  Future<void> _cancelDeletion() async {
+    final api = context.read<ApiService>();
     try {
       await api.cancelAccountDeletion();
       if (!mounted) return;
-      rootContext.read<AuthBloc>().add(const CheckAuthStatus());
+      context.read<AuthBloc>().add(const CheckAuthStatus());
       messengerKey.currentState?.showSnackBar(const SnackBar(
         content: Text("Suppression annulée !"),
         backgroundColor: AppColors.success,
       ));
     } catch (e) {
+      if (!mounted) return;
       messengerKey.currentState?.showSnackBar(SnackBar(
         content: Text(e.toString()),
         backgroundColor: AppColors.error,
@@ -132,8 +130,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final rootContext = context;
-
     return Scaffold(
       backgroundColor: AppColors.backgroundLight,
       body: BlocBuilder<AuthBloc, AuthState>(
@@ -145,80 +141,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
               
               return CustomScrollView(
                 slivers: [
-                  _buildAppBar(user),
+                  _buildAppBar(),
                   SliverPadding(
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         if (user != null && user.deletionRequestedAt != null)
-                          Container(
-                            margin: const EdgeInsets.only(bottom: 24),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade50,
-                              border: Border.all(color: Colors.orange.shade300),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Votre compte sera supprimé le ${_deletionDate(user.deletionRequestedAt!)}. ',
-                                        style: TextStyle(color: Colors.orange.shade800, fontSize: 13, fontWeight: FontWeight.bold),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      const Text(
-                                        'Reconnectez-vous avant cette date pour l\'annuler ou cliquez ci-dessous.',
-                                        style: TextStyle(color: Colors.orange, fontSize: 12),
-                                      ),
-                                      TextButton(
-                                        onPressed: () => _cancelDeletion(rootContext),
-                                        style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 30)),
-                                        child: const Text("Annuler la suppression", style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
+                          _buildDeletionNotice(user),
                         _buildHeader(user),
                         const SizedBox(height: 24),
                         _buildStatsRow(dashData),
                         const SizedBox(height: 32),
-                        
                         if (_isEditing) 
-                          _buildEditForm(rootContext)
+                          _buildEditForm()
                         else ...[
-                          _buildSectionTitle("Skin Profile"),
+                          _buildSectionTitle("Profil de peau"),
                           const SizedBox(height: 12),
                           _buildSkinProfileCard(user),
-                          
                           const SizedBox(height: 32),
-                          _buildSectionTitle("Settings"),
+                          _buildSectionTitle("Paramètres"),
                           const SizedBox(height: 12),
-                          _buildSettingsSection(rootContext, user),
-                          
+                          _buildSettingsSection(user),
                           const SizedBox(height: 32),
-                          _buildSectionTitle("About"),
+                          _buildSectionTitle("À propos"),
                           const SizedBox(height: 12),
-                          _buildAboutSection(rootContext),
-
+                          _buildAboutSection(),
                           const SizedBox(height: 32),
-                          _buildSectionTitle("Danger Zone"),
+                          _buildSectionTitle("Zone de danger"),
                           const SizedBox(height: 12),
-                          _buildDangerZone(rootContext, user),
-                          
+                          _buildDangerZone(user),
                           const SizedBox(height: 40),
-                          _buildSignOutButton(rootContext),
+                          _buildSignOutButton(),
                         ],
-                        
                         const SizedBox(height: 100),
                       ]),
                     ),
@@ -232,14 +186,53 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAppBar(UserModel? user) {
+  Widget _buildDeletionNotice(UserModel user) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        border: Border.all(color: Colors.orange.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Votre compte sera supprimé le ${_deletionDate(user.deletionRequestedAt!)}. ',
+                  style: TextStyle(color: Colors.orange.shade800, fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Reconnectez-vous avant cette date pour l\'annuler ou cliquez ci-dessous.',
+                  style: TextStyle(color: Colors.orange, fontSize: 12),
+                ),
+                TextButton(
+                  onPressed: _cancelDeletion,
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero, minimumSize: const Size(0, 30)),
+                  child: const Text("Annuler la suppression", style: TextStyle(fontWeight: FontWeight.bold, decoration: TextDecoration.underline)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAppBar() {
     return SliverAppBar(
       expandedHeight: 120,
       pinned: true,
       backgroundColor: Colors.white,
       elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
-        title: Text(_isEditing ? "Edit Profile" : "Profile", 
+        title: Text(_isEditing ? "Modifier le profil" : "Profil", 
           style: const TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold, fontSize: 18)),
         centerTitle: true,
       ),
@@ -257,9 +250,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         _buildAvatar(user),
         const SizedBox(height: 16),
-        Text(user?.fullName ?? "User", 
+        Text(user?.fullName ?? "Utilisateur", 
           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-        Text(user?.email ?? "email@example.com", 
+        Text(user?.email ?? "email@exemple.com", 
           style: const TextStyle(fontSize: 14, color: AppColors.textGrey)),
       ],
     );
@@ -306,9 +299,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget _buildStatsRow(dynamic dashData) {
     return Row(
       children: [
-        _statItem(dashData?.lastAnalysis?.overallScore?.toString() ?? "0", "%", "Skin Score"),
-        _statItem(dashData?.totalAnalyses.toString() ?? "0", "", "Scans"),
-        _statItem(dashData?.currentStreak.toString() ?? "0", "", "Days Streak"),
+        _statItem(dashData?.lastAnalysis?.overallScore?.toString() ?? "0", "%", "Score Peau"),
+        _statItem(dashData?.totalAnalyses.toString() ?? "0", "", "Analyses"),
+        _statItem(dashData?.currentStreak.toString() ?? "0", "", "Série"),
       ],
     );
   }
@@ -345,26 +338,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       child: Column(
         children: [
-          _profileRow("💧", "Skin Type", user?.skinType ?? "Not set"),
+          _profileRow(Icons.opacity, "Type de peau", user?.skinType ?? "Non défini"),
           const Divider(height: 24, thickness: 0.5),
-          _profileRow("🎯", "Primary Concerns", user?.skinConcerns ?? "Not set"),
+          _profileRow(Icons.track_changes, "Préoccupations", user?.skinConcerns ?? "Non défini"),
           const Divider(height: 24, thickness: 0.5),
-          _profileRow("⚠️", "Allergies", "None detected"),
+          _profileRow(Icons.wb_sunny_outlined, "Exposition Soleil", "Modérée"),
           const Divider(height: 24, thickness: 0.5),
-          _profileRow("📅", "Age Range", "25-30 years"),
+          _profileRow(Icons.speed, "Niveau d'effort", "Moyen"),
+          const Divider(height: 24, thickness: 0.5),
+          _profileRow(Icons.auto_awesome, "Préférence Routine", "Naturelle"),
         ],
       ),
     );
   }
 
-  Widget _profileRow(String emoji, String label, String value) {
+  Widget _profileRow(IconData icon, String label, String value) {
     return Row(
       children: [
         Container(
           width: 36, height: 36,
           decoration: BoxDecoration(color: AppColors.primaryPink.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
           alignment: Alignment.center,
-          child: Text(emoji, style: const TextStyle(fontSize: 18)),
+          child: Icon(icon, size: 18, color: AppColors.primaryPink),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -377,21 +372,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsSection(BuildContext rootContext, UserModel? user) {
+  Widget _buildSettingsSection(UserModel? user) {
     final notificationsEnabled = user?.notificationsEnabled ?? true;
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)]),
       child: Column(
         children: [
-          _settingTile(Icons.notifications_none_rounded, "Notifications", "Manage your alerts", () {
+          _settingTile(Icons.notifications_none_rounded, "Notifications", "Gérez vos alertes", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => NotificationsSettingsScreen(initialEnabled: notificationsEnabled)));
           }),
-          _settingTile(Icons.mail_outline_rounded, "Email Preferences", "Newsletter & updates", () {
+          _settingTile(Icons.mail_outline_rounded, "Préférences e-mail", "Newsletter et mises à jour", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const EmailPreferencesScreen()));
           }),
-          _settingTile(Icons.lock_outline_rounded, "Change Password", "Security and access", () => _showChangePasswordDialog(rootContext)),
-          _settingTile(Icons.help_outline_rounded, "Help & Support", "FAQs and contact us", () {
+          _settingTile(Icons.lock_outline_rounded, "Changer le mot de passe", "Sécurité et accès", _showChangePasswordDialog),
+          _settingTile(Icons.help_outline_rounded, "Aide et support", "FAQ et nous contacter", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportScreen()));
           }),
         ],
@@ -399,19 +394,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildAboutSection(BuildContext rootContext) {
+  Widget _buildAboutSection() {
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 15)]),
       child: Column(
         children: [
-          _settingTile(Icons.description_outlined, "Terms of Service", "Legal agreements", () {
+          _settingTile(Icons.description_outlined, "Conditions d'utilisation", "Accords légaux", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsOfServiceScreen()));
           }),
-          _settingTile(Icons.privacy_tip_outlined, "Privacy Policy", "How we protect your data", () {
+          _settingTile(Icons.privacy_tip_outlined, "Politique de confidentialité", "Protection des données", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()));
           }),
-          _settingTile(Icons.info_outline_rounded, "App Version", "v1.0.0 (Build 42)", () {
+          _settingTile(Icons.info_outline_rounded, "Version", "v1.0.0 (Build 42)", () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const AppVersionScreen()));
           }),
         ],
@@ -419,7 +414,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildDangerZone(BuildContext rootContext, UserModel? user) {
+  Widget _buildDangerZone(UserModel? user) {
     final isDeleting = user?.deletionRequestedAt != null;
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20),
@@ -428,10 +423,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           if (isDeleting)
             _settingTile(Icons.undo_rounded, "Annuler la suppression", "Récupérer votre compte", 
-              () => _cancelDeletion(rootContext), color: Colors.orange)
+              _cancelDeletion, color: Colors.orange)
           else
-            _settingTile(Icons.delete_forever_rounded, "Delete Account", "Permanently remove your data", 
-              () => _showDeleteConfirmation(rootContext), color: AppColors.error),
+            _settingTile(Icons.delete_forever_rounded, "Supprimer le compte", "Suppression définitive", 
+              _showDeleteConfirmation, color: AppColors.error),
         ],
       ),
     );
@@ -448,12 +443,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSignOutButton(BuildContext rootContext) {
+  Widget _buildSignOutButton() {
     return Center(
       child: ElevatedButton.icon(
-        onPressed: () => _signOut(rootContext),
+        onPressed: _signOut,
         icon: const Icon(Icons.logout, size: 20),
-        label: const Text("Sign Out", style: TextStyle(fontSize: 16)),
+        label: const Text("Déconnexion", style: TextStyle(fontSize: 16)),
         style: ElevatedButton.styleFrom(
           foregroundColor: Colors.red.shade400,
           backgroundColor: Colors.red.shade50,
@@ -467,7 +462,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildEditForm(BuildContext rootContext) {
+  Widget _buildEditForm() {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24),
@@ -475,24 +470,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _editField(_firstCtrl, "First Name", Icons.person_outline),
+          _editField(_firstCtrl, "Prénom", Icons.person_outline),
           const SizedBox(height: 16),
-          _editField(_lastCtrl, "Last Name", Icons.person_outline),
+          _editField(_lastCtrl, "Nom", Icons.person_outline),
           const SizedBox(height: 16),
-          _editField(_phoneCtrl, "Phone Number", Icons.phone_outlined, type: TextInputType.phone),
+          _editField(_emailCtrl, "E-mail", Icons.email_outlined, type: TextInputType.emailAddress, readOnly: true),
           const SizedBox(height: 32),
           SizedBox(
             width: double.infinity, height: 55,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : () => _saveProfile(rootContext),
+              onPressed: _isLoading ? null : _saveProfile,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primaryPink, foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 0,
               ),
               child: _isLoading
                   ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : const Text("Update Profile", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  : const Text("Mettre à jour", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             ),
           ),
         ],
@@ -500,129 +494,178 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _editField(TextEditingController ctrl, String hint, IconData icon, {TextInputType type = TextInputType.text}) {
+  Widget _editField(TextEditingController ctrl, String hint, IconData icon, {TextInputType type = TextInputType.text, bool readOnly = false}) {
     return TextFormField(
       controller: ctrl,
       keyboardType: type,
+      readOnly: readOnly,
+      style: TextStyle(color: readOnly ? Colors.grey : Colors.black87),
       decoration: InputDecoration(
         labelText: hint,
-        prefixIcon: Icon(icon, color: AppColors.primaryPink),
+        prefixIcon: Icon(icon, color: readOnly ? Colors.grey : AppColors.primaryPink),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: Colors.grey.shade200)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: AppColors.primaryPink, width: 2)),
-        filled: true, fillColor: Colors.grey.shade50,
+        filled: true, 
+        fillColor: readOnly ? Colors.grey.shade100 : Colors.grey.shade50,
       ),
     );
   }
 
-  void _signOut(BuildContext rootContext) {
+  void _signOut() {
+    final bloc = context.read<AuthBloc>();
     showDialog(
-      context: rootContext,
+      context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Sign Out"),
-        content: const Text("Are you sure you want to exit?"),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Déconnexion"),
+        content: const Text("Voulez-vous vous déconnecter ?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Annuler")),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              rootContext.read<AuthBloc>().add(const LogoutRequested());
+              print("LOGOUT CLICKED");
+              bloc.add(const LogoutRequested());
             },
-            child: const Text("Sign Out", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: const Text("Quitter", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  void _showDeleteConfirmation(BuildContext rootContext) {
+  void _showDeleteConfirmation() {
     showDialog(
-      context: rootContext,
+      context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text("Delete Account"),
-        content: const Text("This action is irreversible. All your skin data, scans, and reports will be permanently deleted. Do you wish to continue?"),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Supprimer le compte"),
+        content: const Text("Cette action est irréversible. Toutes vos données seront perdues. Continuer ?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Annuler")),
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _deleteAccount(rootContext);
+              _deleteAccount();
             },
-            child: const Text("Delete Permanently", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            child: const Text("Supprimer", style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
     );
   }
 
-  void _showChangePasswordDialog(BuildContext rootContext) {
-    final oldCtrl = TextEditingController();
-    final newCtrl = TextEditingController();
-    final api = rootContext.read<ApiService>();
-
+  void _showChangePasswordDialog() {
+    final api = context.read<ApiService>();
     showDialog(
-      context: rootContext,
-      builder: (rootCtx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text("Change Password"),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: oldCtrl, 
-                obscureText: !_oldPasswordVisible, 
-                decoration: InputDecoration(
-                  hintText: "Current password", 
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  suffixIcon: IconButton(
-                    icon: Icon(_oldPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setDialogState(() => _oldPasswordVisible = !_oldPasswordVisible),
-                  ),
-                ),
+      context: context,
+      builder: (context) => ChangePasswordDialog(api: api),
+    );
+  }
+}
+
+class ChangePasswordDialog extends StatefulWidget {
+  final ApiService api;
+  const ChangePasswordDialog({super.key, required this.api});
+
+  @override
+  State<ChangePasswordDialog> createState() => _ChangePasswordDialogState();
+}
+
+class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
+  final _oldCtrl = TextEditingController();
+  final _newCtrl = TextEditingController();
+  bool _oldVisible = false;
+  bool _newVisible = false;
+  bool _loading = false;
+
+  @override
+  void dispose() {
+    _oldCtrl.dispose();
+    _newCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text("Changer le mot de passe"),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _oldCtrl, obscureText: !_oldVisible,
+            decoration: InputDecoration(
+              hintText: "Mot de passe actuel",
+              suffixIcon: IconButton(
+                icon: Icon(_oldVisible ? Icons.visibility : Icons.visibility_off),
+                onPressed: () => setState(() => _oldVisible = !_oldVisible),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: newCtrl, 
-                obscureText: !_newPasswordVisible,
-                decoration: InputDecoration(
-                  hintText: "New password (min 8 chars)", 
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  suffixIcon: IconButton(
-                    icon: Icon(_newPasswordVisible ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setDialogState(() => _newPasswordVisible = !_newPasswordVisible),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
-            ElevatedButton(
-              onPressed: () async {
-                if (newCtrl.text.length < 8) return;
-                try {
-                  await api.changePassword(oldCtrl.text, newCtrl.text);
-                  if (rootContext.mounted) {
-                    Navigator.pop(ctx);
-                    messengerKey.currentState?.showSnackBar(const SnackBar(
-                      content: Text("Password changed successfully!"), backgroundColor: AppColors.success,
-                    ));
-                  }
-                } catch (e) {
-                  messengerKey.currentState?.showSnackBar(SnackBar(
-                    content: Text(e.toString()), backgroundColor: AppColors.error,
-                  ));
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPink, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: const Text("Change", style: TextStyle(color: Colors.white)),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _newCtrl, obscureText: !_newVisible,
+            decoration: InputDecoration(
+              hintText: "Nouveau (min 8 caractères)",
+              suffixIcon: IconButton(
+                icon: Icon(_newVisible ? Icons.visibility : Icons.visibility_off),
+                onPressed: () => setState(() => _newVisible = !_newVisible),
+              ),
+            ),
+          ),
+        ],
       ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Annuler")),
+        ElevatedButton(
+          onPressed: _loading ? null : () async {
+            final oldP = _oldCtrl.text.trim();
+            final newP = _newCtrl.text.trim();
+
+            if (oldP.isEmpty) {
+              _showError("Veuillez saisir votre mot de passe actuel.");
+              return;
+            }
+
+            if (newP.length < 8) {
+              _showError("Le nouveau mot de passe doit faire au moins 8 caractères.");
+              return;
+            }
+
+            if (oldP == newP) {
+              _showError("Le nouveau mot de passe doit être différent de l'actuel.");
+              return;
+            }
+
+            setState(() => _loading = true);
+            try {
+              await widget.api.changePassword(oldP, newP);
+              if (mounted) {
+                Navigator.pop(context);
+                messengerKey.currentState?.showSnackBar(const SnackBar(
+                  content: Text("Mot de passe changé avec succès !"),
+                  backgroundColor: AppColors.success,
+                ));
+              }
+            } catch (e) {
+              if (mounted) {
+                setState(() => _loading = false);
+                _showError(e.toString());
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryPink),
+          child: _loading 
+            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : const Text("Changer", style: TextStyle(color: Colors.white)),
+        ),
+      ],
     );
+  }
+
+  void _showError(String msg) {
+     messengerKey.currentState?.showSnackBar(SnackBar(
+        content: Text(msg),
+        backgroundColor: AppColors.error,
+     ));
   }
 }

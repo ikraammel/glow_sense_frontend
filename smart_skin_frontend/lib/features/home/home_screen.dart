@@ -37,11 +37,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _navItem(0, Icons.home_rounded, Icons.home_outlined, "Home"),
-                _navItem(1, Icons.camera_alt_rounded, Icons.camera_alt_outlined, "Scan"),
-                _navItem(2, Icons.auto_awesome, Icons.auto_awesome_outlined, "AI"),
-                _navItem(3, Icons.qr_code_scanner, Icons.qr_code_scanner, "Product"),
-                _navItem(4, Icons.person_rounded, Icons.person_outline_rounded, "Profile"),
+                _navItem(0, Icons.home_rounded, Icons.home_outlined, "Accueil"),
+                _navItem(1, Icons.camera_alt_rounded, Icons.camera_alt_outlined, "Analyse"),
+                _navItem(2, Icons.auto_awesome, Icons.auto_awesome_outlined, "Coach IA"),
+                _navItem(3, Icons.qr_code_scanner, Icons.qr_code_scanner, "Produits"),
+                _navItem(4, Icons.person_rounded, Icons.person_outline_rounded, "Profil"),
               ],
             ),
           ),

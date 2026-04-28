@@ -14,6 +14,7 @@ import 'data/services/local_storage_service.dart';
 import 'features/auth/login_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/onboarding/onboarding_flow.dart';
+import 'features/onboarding/welcome_screen.dart';
 
 final GlobalKey<ScaffoldMessengerState> messengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -73,34 +74,44 @@ class _AppRouter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (ctx, state) {
-        if (state is AuthInitial) {
-          return const Scaffold(
-            backgroundColor: AppColors.backgroundLight,
-            body: Center(
-              child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: AppColors.primaryPink,
-                  child: Icon(Icons.auto_awesome, size: 40, color: Colors.white),
-                ),
-                SizedBox(height: 20),
-                Text("GlowSense", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(height: 16),
-                CircularProgressIndicator(color: AppColors.primaryPink),
-              ]),
-            ),
-          );
-        }
-        
-        if (state is AuthAuthenticated) {
-          if (state.needsOnboarding) return const OnboardingFlow();
-          return const HomeScreen();
-        }
-        
-        return const LoginScreen();
+    return BlocListener<AuthBloc, AuthState>(
+      // Force le retour à l'écran de base lors de la déconnexion
+      listenWhen: (prev, curr) => curr is AuthUnauthenticated,
+      listener: (context, state) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
       },
+      child: BlocBuilder<AuthBloc, AuthState>(
+        builder: (ctx, state) {
+          // 1. CHARGEMENT / INITIALISATION
+          if (state is AuthInitial || state is AuthLoading) {
+            return const Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: AppColors.primaryPink),
+                    SizedBox(height: 16),
+                    Text("Préparation de votre univers...", style: TextStyle(color: AppColors.textGrey)),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          // 2. UTILISATEUR CONNECTÉ
+          if (state is AuthAuthenticated) {
+            if (state.needsOnboarding) return const OnboardingFlow();
+            return const HomeScreen();
+          }
+
+          // 3. PAR DÉFAUT : BIENVENUE
+          return WelcomeScreen(
+            onFinished: () {
+              Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+            },
+          );
+        },
+      ),
     );
   }
 }

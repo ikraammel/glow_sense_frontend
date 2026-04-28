@@ -35,7 +35,11 @@ class ApiService {
           print("PATH: ${error.requestOptions.path}");
           print("DATA: ${error.response?.data}");
         }
-        if (error.response?.statusCode == 401) {
+        
+        // On ne refresh pas le token si on est sur la page de login ou register
+        if (error.response?.statusCode == 401 && 
+            !error.requestOptions.path.contains('/auth/login') &&
+            !error.requestOptions.path.contains('/auth/register')) {
           final refreshed = await _tryRefreshToken();
           if (refreshed) {
             final opts = error.requestOptions;
@@ -56,8 +60,13 @@ class ApiService {
   Future<AuthResponse> login(String email, String password) async {
     try {
       final res = await _dio.post('/auth/login', data: {'email': email, 'password': password});
+      print("RAW RESPONSE => ${res.data}");
       return AuthResponse.fromJson(res.data['data'] ?? res.data);
-    } on DioException catch (e) { throw _error(e); }
+    } on DioException catch (e) { 
+      final err = _error(e);
+      print("API LOGIN ERROR: $err");
+      throw err; 
+    }
   }
 
   Future<AuthResponse> register(String firstName, String lastName, String email, String password) async {
@@ -222,14 +231,6 @@ class ApiService {
     } on DioException catch (e) { throw _error(e); }
   }
 
-  // Future<void> deleteAccount() async {
-  //   try {
-  //     await _dio.delete('/auth/delete-account');
-  //   } on DioException catch (e) {
-  //     throw _error(e);
-  //   }
-  // }
-
   Future<int> getUnreadCount() async {
     try {
       final res = await _dio.get('/notifications/unread-count');
@@ -281,12 +282,16 @@ class ApiService {
   String _error(DioException e) {
     final data = e.response?.data;
     if (data is Map) {
+      if (data.containsKey('data') && data['data'] is Map && data['data'].containsKey('message')) {
+        return data['data']['message'];
+      }
       return data['message'] ??
              data['error'] ??
              data['detail'] ??
              (data['errors'] is List ? (data['errors'] as List).first.toString() : null) ??
-             "Erreur serveur";
+             "Identifiants invalides ou erreur serveur";
     }
-    return e.message ?? "Une erreur est survenue";
+    if (e.type == DioExceptionType.connectionTimeout) return "Connexion au serveur impossible";
+    return "Une erreur est survenue lors de la connexion";
   }
 }

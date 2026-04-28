@@ -21,15 +21,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _checkAuth(CheckAuthStatus e, Emitter<AuthState> emit) async {
     final token = _storage.getAccessToken();
-    if (token == null || token.isEmpty) { 
-      emit(const AuthUnauthenticated()); 
-      return; 
+    if (token == null || token.isEmpty) {
+      emit(const AuthUnauthenticated());
+      return;
     }
     try {
       final user = await _api.getProfile();
       emit(AuthAuthenticated(user: user, needsOnboarding: !user.onboardingCompleted));
-    } catch (_) { 
-      emit(const AuthUnauthenticated()); 
+    } catch (_) {
+      emit(const AuthUnauthenticated());
     }
   }
 
@@ -40,6 +40,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _storage.saveTokens(auth.accessToken, auth.refreshToken);
       emit(AuthAuthenticated(user: auth.user, needsOnboarding: !auth.user.onboardingCompleted));
     } catch (err) {
+      print("ERREUR AUTH BLOC: $err");
       emit(AuthFailure(message: err.toString()));
     }
   }
@@ -50,8 +51,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final auth = await _api.register(e.firstName, e.lastName, e.email, e.password);
       await _storage.saveTokens(auth.accessToken, auth.refreshToken);
       emit(AuthAuthenticated(user: auth.user, needsOnboarding: true));
-    } catch (err) { 
-      emit(AuthFailure(message: err.toString())); 
+    } catch (err) {
+      emit(AuthFailure(message: err.toString()));
     }
   }
 
@@ -65,8 +66,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       await _api.forgotPassword(e.email);
       emit(const ForgotPasswordSuccess());
-    } catch (err) { 
-      emit(AuthFailure(message: err.toString())); 
+    } catch (err) {
+      emit(AuthFailure(message: err.toString()));
     }
   }
 

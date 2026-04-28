@@ -4,6 +4,7 @@ import '../../bloc/auth/auth_bloc.dart';
 import '../../bloc/auth/auth_event.dart';
 import '../../bloc/auth/auth_state.dart';
 import '../../constants/colors.dart';
+import '../../main.dart';
 import 'signup_screen.dart';
 import 'forgot_password_screen.dart';
 
@@ -28,11 +29,17 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            print("LOGIN FAILURE: ${state.message}");
+            messengerKey.currentState?.hideCurrentSnackBar();
+            messengerKey.currentState?.showSnackBar(SnackBar(
               content: Text(state.message),
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ));
+          } else if (state is AuthAuthenticated) {
+            // Fermer l'écran de login pour laisser le routeur racine (main.dart) 
+            // afficher le HomeScreen ou l'OnboardingFlow
+            Navigator.of(context).pop();
           }
         },
         child: SafeArea(
@@ -55,24 +62,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const Center(child: Text("Welcome Back", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold))),
-                  const Center(child: Text("Sign in to continue your skincare journey",
+                  const Center(child: Text("Bon retour !", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold))),
+                  const Center(child: Text("Connectez-vous pour continuer votre routine",
                       style: TextStyle(color: AppColors.textGrey, fontSize: 15))),
                   const SizedBox(height: 40),
-                  _label("Email"),
+                  _label("E-mail"),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: _inputDec("example@email.com", Icons.email_outlined),
+                    decoration: _inputDec("exemple@email.com", Icons.email_outlined),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'Entrez votre email';
-                      if (!v.contains('@')) return 'Email invalide';
+                      if (v == null || v.isEmpty) return 'Entrez votre e-mail';
+                      if (!v.contains('@')) return 'E-mail invalide';
                       return null;
                     },
                   ),
                   const SizedBox(height: 20),
-                  _label("Password"),
+                  _label("Mot de passe"),
                   const SizedBox(height: 8),
                   TextFormField(
                     controller: _passCtrl,
@@ -89,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen())),
-                      child: const Text("Forgot Password?", style: TextStyle(color: AppColors.primaryPink)),
+                      child: const Text("Mot de passe oublié ?", style: TextStyle(color: AppColors.primaryPink)),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -114,8 +121,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         child: state is AuthLoading
                             ? const SizedBox(height: 20, width: 20,
-                                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                            : const Text("Sign In", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text("Se connecter", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ),
@@ -123,10 +130,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text("Don't have an account? "),
+                      const Text("Vous n'avez pas de compte ? "),
                       GestureDetector(
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SignupScreen())),
-                        child: const Text("Sign Up", style: TextStyle(color: AppColors.primaryPink, fontWeight: FontWeight.bold)),
+                        child: const Text("S'inscrire", style: TextStyle(color: AppColors.primaryPink, fontWeight: FontWeight.bold)),
                       ),
                     ],
                   ),
