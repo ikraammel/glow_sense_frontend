@@ -53,6 +53,12 @@ class SkinAnalysisModel {
   final List<RecommendationModel> recommandations;
   final String analyzedAt;
 
+  // Nouveaux champs pour le modèle Python
+  final String? modelPrediction;
+  final double? modelConfidence;
+  final Map<String, double>? modelProbabilities;
+  final bool? modelWasAvailable;
+
   SkinAnalysisModel({
     this.id,
     this.imageUrl,
@@ -67,6 +73,10 @@ class SkinAnalysisModel {
     this.detectedProblems = const [],
     this.recommandations = const [],
     this.analyzedAt = '',
+    this.modelPrediction,
+    this.modelConfidence,
+    this.modelProbabilities,
+    this.modelWasAvailable,
   });
 
   factory SkinAnalysisModel.fromJson(Map<String, dynamic> json) =>
@@ -90,6 +100,14 @@ class SkinAnalysisModel {
             .map((e) => RecommendationModel.fromJson(e))
             .toList(),
         analyzedAt: json['analyzedAt']?.toString() ?? '',
+        modelPrediction: json['modelPrediction'],
+        modelConfidence: (json['modelConfidence'] as num?)?.toDouble(),
+        modelProbabilities: json['modelProbabilities'] != null
+            ? (json['modelProbabilities'] as Map).map(
+                (k, v) => MapEntry(k.toString(), (v as num).toDouble()),
+              )
+            : {},
+        modelWasAvailable: json['modelWasAvailable'],
       );
 }
 

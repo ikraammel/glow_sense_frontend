@@ -213,6 +213,15 @@ class _ResultView extends StatelessWidget {
 
   const _ResultView({required this.result, required this.onReset});
 
+  Color getPredictionColor(String? p) {
+    switch (p?.toLowerCase()) {
+      case "acne": return Colors.red;
+      case "dark spots": return Colors.brown;
+      case "wrinkles": return Colors.orange;
+      default: return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final score = result.overallScore ?? 0;
@@ -251,13 +260,101 @@ class _ResultView extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 20),
-          // Score bars
-          _buildScoreBar("Hydration", result.hydrationScore),
-          _buildScoreBar("Acne", result.acneScore),
-          _buildScoreBar("Pigmentation", result.pigmentationScore),
-          _buildScoreBar("Wrinkles", result.wrinkleScore),
-          _buildScoreBar("Pores", result.poreScore),
+
+          // Gérer modèle indisponible
+          if (result.modelWasAvailable == false) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Text(
+                "Analyse IA indisponible, résultats estimés.",
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+          ],
+
+          // Section Détection IA (Python Model)
+          if (result.modelWasAvailable == true && result.modelPrediction != null) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3E5F5),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFCE93D8)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.biotech, color: Color(0xFF7B1FA2), size: 18),
+                      SizedBox(width: 8),
+                      Text("Détection IA", style: TextStyle(
+                        fontWeight: FontWeight.bold, color: Color(0xFF7B1FA2))),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          (result.modelPrediction ?? "unknown").toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 18, 
+                            fontWeight: FontWeight.bold,
+                            color: getPredictionColor(result.modelPrediction),
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7B1FA2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          "${(result.modelConfidence ?? 0).toStringAsFixed(1)}%",
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...(result.modelProbabilities ?? {}).entries.map((e) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      children: [
+                        SizedBox(width: 120,
+                          child: Text(e.key, style: const TextStyle(fontSize: 12))),
+                        Expanded(
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: e.value / 100,
+                              minHeight: 8,
+                              backgroundColor: Colors.grey.shade200,
+                              valueColor: AlwaysStoppedAnimation(getPredictionColor(e.key)),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(width: 45,
+                          child: Text("${e.value.toStringAsFixed(1)}%",
+                            style: const TextStyle(fontSize: 11),
+                            textAlign: TextAlign.right)),
+                      ],
+                    ),
+                  )),
+                ],
+              ),
+            ),
+          ],
+
           if (result.analysisDescription.isNotEmpty) ...[
             const SizedBox(height: 20),
             const Text("Analysis", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -303,31 +400,6 @@ class _ResultView extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 30),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScoreBar(String label, int? score) {
-    final s = score ?? 0;
-    final color = s >= 70 ? AppColors.success : s >= 40 ? AppColors.warning : AppColors.error;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          SizedBox(width: 110, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: s / 100, minHeight: 10, backgroundColor: Colors.grey.shade200,
-                valueColor: AlwaysStoppedAnimation<Color>(color),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          SizedBox(width: 36, child: Text(s.toString(), textAlign: TextAlign.right,
-              style: TextStyle(color: color, fontWeight: FontWeight.bold))),
         ],
       ),
     );
