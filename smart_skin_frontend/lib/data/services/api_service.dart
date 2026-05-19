@@ -291,10 +291,41 @@ class ApiService {
             .toList();
       }
 
+      if (products is Map) {
+        final routine = _routineFromMap(products);
+        if (routine.isNotEmpty) return routine;
+      }
+
+      if (data is Map) {
+        final routine = _routineFromMap(data);
+        if (routine.isNotEmpty) return routine;
+      }
+
       return [];
     } on DioException catch (e) {
       throw _error(e);
     }
+  }
+
+  List<Map<String, dynamic>> _routineFromMap(Map data) {
+    const routineTypes = [
+      'Gel',
+      'Cr\u00E8me Hydratante',
+      '\u00C9cran Solaire',
+      'S\u00E9rum',
+    ];
+
+    return routineTypes
+        .where((type) =>
+            data[type] != null && data[type].toString().trim().isNotEmpty)
+        .map((type) => {
+              'routineStep': type,
+              'name': data[type].toString(),
+              'description': 'A utiliser dans votre routine visage.',
+              'category': 'Routine visage',
+              'isRoutine': true,
+            })
+        .toList();
   }
 
   Future<List<ProductScanModel>> getProductHistory({int page = 0, int size = 10}) async {

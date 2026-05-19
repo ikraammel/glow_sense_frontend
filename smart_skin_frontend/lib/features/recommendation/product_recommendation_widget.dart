@@ -54,17 +54,23 @@ class _ProductRecommendationWidgetState
                   data['data'] ??
                   data['result'])
               : null;
+      final routine = products is Map
+          ? _routineFromMap(products)
+          : data is Map
+              ? _routineFromMap(data)
+              : <Map<String, dynamic>>[];
 
       if (!mounted) return;
+      final parsedProducts = products is List
+          ? products
+              .whereType<Map>()
+              .map((item) => item.map(
+                    (key, value) => MapEntry(key.toString(), value),
+                  ))
+              .toList()
+          : <Map<String, dynamic>>[];
       setState(() {
-        pharmaProducts = products is List
-            ? products
-                .whereType<Map>()
-                .map((item) => item.map(
-                      (key, value) => MapEntry(key.toString(), value),
-                    ))
-                .toList()
-            : [];
+        pharmaProducts = routine.isNotEmpty ? routine : parsedProducts;
         isLoading = false;
       });
     } catch (e) {
@@ -174,6 +180,25 @@ class _ProductRecommendationWidgetState
     return 'Sensible';
   }
 
+  List<Map<String, dynamic>> _routineFromMap(Map data) {
+    const routineTypes = [
+      'Gel',
+      'Cr\u00E8me Hydratante',
+      '\u00C9cran Solaire',
+      'S\u00E9rum',
+    ];
+
+    return routineTypes
+        .where((type) =>
+            data[type] != null && data[type].toString().trim().isNotEmpty)
+        .map((type) => {
+              'routineStep': type,
+              'name': data[type].toString(),
+              'description': 'A utiliser dans votre routine visage.',
+            })
+        .toList();
+  }
+
   String _toPharmaProblem(String problem) {
     final normalized = problem.toLowerCase().trim();
     if (normalized.contains('acne') ||
@@ -251,6 +276,7 @@ class ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final image =
         product['image'] ?? product['image_url'] ?? product['imageUrl'];
+    final routineStep = product['routineStep'];
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
@@ -258,16 +284,20 @@ class ProductCard extends StatelessWidget {
             ? Image.network(image.toString(),
                 width: 56, height: 56, fit: BoxFit.cover)
             : const Icon(Icons.medical_services),
-        title: Text(
-          (product['name'] ??
-                  product['product_name'] ??
-                  product['productName'] ??
-                  product['title'] ??
-                  'Produit')
-              .toString(),
-        ),
+        title: Text((routineStep ??
+                product['name'] ??
+                product['product_name'] ??
+                product['productName'] ??
+                product['title'] ??
+                'Produit')
+            .toString()),
         subtitle: Text(
-          (product['description'] ?? product['desc'] ?? product['summary'] ?? '')
+          (routineStep != null
+                  ? product['name']
+                  : product['description'] ??
+                      product['desc'] ??
+                      product['summary'] ??
+                      '')
               .toString(),
         ),
       ),

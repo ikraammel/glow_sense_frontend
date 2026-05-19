@@ -979,7 +979,7 @@ class _PharmaRecommendationsSectionState
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.bold)),
                         SizedBox(height: 2),
-                        Text("Selon le type de peau et le probleme principal",
+                        Text("Routine visage recommandee",
                             style: TextStyle(
                                 color: AppColors.textGrey, fontSize: 12)),
                       ],
@@ -1099,6 +1099,7 @@ class _PharmaProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = _value(['name', 'product_name', 'productName', 'title']) ??
         'Produit recommande';
+    final routineStep = _value(['routineStep', 'type', 'product_type']);
     final description =
         _value(['description', 'desc', 'summary', 'reason', 'details']) ?? '';
     final brand = _value(['brand', 'marque', 'category']);
@@ -1132,8 +1133,8 @@ class _PharmaProductCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (brand != null) ...[
-                  Text(brand,
+                if (routineStep != null || brand != null) ...[
+                  Text(routineStep ?? brand!,
                       style: const TextStyle(
                           color: AppColors.accentBlue,
                           fontWeight: FontWeight.bold,
