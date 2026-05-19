@@ -15,8 +15,8 @@ class ApiService {
   ApiService(this._storage) {
     _dio = Dio(BaseOptions(
       baseUrl: "${AppConstants.baseUrl}/api",
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 90),
     ));
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
@@ -340,7 +340,11 @@ class ApiService {
     final refresh = _storage.getRefreshToken();
     if (refresh == null) return false;
     try {
-      final res = await Dio().post('${AppConstants.baseUrl}/api/auth/refresh', data: {'refreshToken': refresh});
+      final res = await Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 90),
+      )).post('${AppConstants.baseUrl}/api/auth/refresh',
+          data: {'refreshToken': refresh});
       final access = (res.data['data'] ?? res.data)['accessToken'];
       final newRefresh = (res.data['data'] ?? res.data)['refreshToken'];
       await _storage.saveTokens(access, newRefresh);
@@ -352,6 +356,12 @@ class ApiService {
   }
 
   String _error(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.receiveTimeout ||
+        e.type == DioExceptionType.sendTimeout) {
+      return "Le serveur met du temps à répondre, veuillez réessayer dans quelques secondes...";
+    }
+
     final data = e.response?.data;
     if (data is Map) {
       if (data.containsKey('data') && data['data'] is Map && data['data'].containsKey('message')) {
@@ -363,7 +373,6 @@ class ApiService {
              (data['errors'] is List ? (data['errors'] as List).first.toString() : null) ??
              "Identifiants invalides ou erreur serveur";
     }
-    if (e.type == DioExceptionType.connectionTimeout) return "Connexion au serveur impossible";
     return "Une erreur est survenue lors de la connexion";
   }
 }

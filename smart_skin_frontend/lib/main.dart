@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'bloc/auth/auth_bloc.dart';
 import 'bloc/auth/auth_event.dart';
@@ -8,6 +9,7 @@ import 'bloc/dashboard/dashboard_bloc.dart';
 import 'bloc/analysis/analysis_bloc.dart';
 import 'bloc/coach/coach_bloc.dart';
 import 'bloc/notification/notification_bloc.dart';
+import 'constants/constants.dart';
 import 'constants/colors.dart';
 import 'data/services/api_service.dart';
 import 'data/services/local_storage_service.dart';
@@ -18,8 +20,21 @@ import 'features/onboarding/welcome_screen.dart';
 
 final GlobalKey<ScaffoldMessengerState> messengerKey = GlobalKey<ScaffoldMessengerState>();
 
+Future<void> _wakeUpServer() async {
+  try {
+    await Dio().get(
+      '${AppConstants.baseUrl}/actuator/health',
+      options: Options(
+        sendTimeout: const Duration(seconds: 2),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+    );
+  } catch (_) {}
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _wakeUpServer();
   final prefs = await SharedPreferences.getInstance();
   final storage = LocalStorageService(prefs: prefs);
   final api = ApiService(storage);
