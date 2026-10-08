@@ -40,7 +40,3 @@ cd smart_skin_frontend
 flutter pub get
 flutter run
 ```
-
-## About this project
-
-Part of my software engineering project portfolio.
