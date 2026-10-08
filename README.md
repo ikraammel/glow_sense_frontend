@@ -1,10 +1,29 @@
-# Glow Sense — Flutter Frontend
+# GlowSense — AI Skin Analysis Mobile App
 
-Flutter mobile frontend for the Glow Sense skin-care application. The Flutter project is located in `smart_skin_frontend/`.
+GlowSense is an AI-powered mobile skincare application designed to support automated skin analysis, personalized recommendations, and ongoing skincare monitoring. This repository contains the Flutter frontend.
 
-## Repository overview
+## Key features
 
-This repository is part of my software engineering portfolio. It contains the implementation and supporting project files for **Glow Sense — Flutter Frontend**.
+- Automated AI-assisted skin analysis
+- Personalized skincare recommendations
+- Tracking of skin condition over time
+- Interactive skincare coach
+- Mobile user experience backed by secured REST APIs
+
+## Technology stack
+
+- Flutter
+- Dart
+- Java
+- Spring Boot
+- Spring Security
+- JWT
+- MySQL
+- Cloudinary
+
+## Repository structure
+
+Mobile application source: `smart_skin_frontend/`. Related backend: [glow_sense_backend](https://github.com/ikraammel/glow_sense_backend).
 
 ## Getting started
 
@@ -14,8 +33,7 @@ Clone the repository:
 git clone https://github.com/ikraammel/glow_sense_frontend.git
 cd glow_sense_frontend
 ```
-
-### Run locally
+To launch the mobile frontend (Flutter SDK required):
 
 ```bash
 cd smart_skin_frontend
@@ -23,11 +41,9 @@ flutter pub get
 flutter run
 ```
 
-Install the required SDK and configure any backend services or environment variables used by the application before launching.
+## About this project
 
-## Project structure
-
-Browse the source folders in this repository to explore the implementation. For projects with separate frontend and backend components, configure and run each component independently.
+Part of my software engineering project portfolio.
 
 ## Author
 
