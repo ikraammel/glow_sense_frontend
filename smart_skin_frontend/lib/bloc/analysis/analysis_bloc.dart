@@ -5,22 +5,30 @@ import 'analysis_state.dart';
 
 class AnalysisBloc extends Bloc<AnalysisEvent, AnalysisState> {
   final ApiService _api;
-  AnalysisBloc({required ApiService api}) : _api = api, super(const AnalysisInitial()) {
+  AnalysisBloc({required ApiService api})
+      : _api = api,
+        super(const AnalysisInitial()) {
     on<SubmitAnalysis>(_submit);
     on<LoadAnalysisHistory>(_loadHistory);
   }
   Future<void> _submit(SubmitAnalysis e, Emitter<AnalysisState> emit) async {
     emit(const AnalysisLoading());
     try {
-      final result = await _api.analyzeSkin(e.imagePath);
+      final result = await _api.analyzeSkin(e.image);
       emit(AnalysisDone(result));
-    } catch (err) { emit(AnalysisError(err.toString())); }
+    } catch (err) {
+      emit(AnalysisError(err.toString()));
+    }
   }
-  Future<void> _loadHistory(LoadAnalysisHistory e, Emitter<AnalysisState> emit) async {
+
+  Future<void> _loadHistory(
+      LoadAnalysisHistory e, Emitter<AnalysisState> emit) async {
     emit(const AnalysisLoading());
     try {
       final list = await _api.getAnalysisHistory();
       emit(AnalysisHistoryLoaded(list));
-    } catch (err) { emit(AnalysisError(err.toString())); }
+    } catch (err) {
+      emit(AnalysisError(err.toString()));
+    }
   }
 }

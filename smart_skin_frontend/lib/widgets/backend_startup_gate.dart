@@ -52,8 +52,9 @@ class _BackendStartupGateState extends State<BackendStartupGate>
             animation: _animationController,
             title: 'GlowSense is getting ready...',
             description:
-                "Our backend is hosted on Render's free tier and may take a moment to wake up. Thank you for your patience!",
-            status: 'Connecting to the server...',
+            "We're getting everything ready for you. "
+                "This may take a few moments.",
+            status: "Initializing services...",
           );
         }
         if (snapshot.data != true) {

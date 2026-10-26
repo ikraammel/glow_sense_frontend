@@ -47,24 +47,51 @@ class _GlowSenseBootstrapState extends State<GlowSenseBootstrap> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return BackendStartupGate(
+Widget build(BuildContext context) {
+  return MaterialApp(
+    title: 'GlowSense',
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.primaryPink,
+      ),
+      useMaterial3: true,
+      fontFamily: 'Roboto',
+      scaffoldBackgroundColor: AppColors.backgroundLight,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textDark,
+        elevation: 0,
+      ),
+    ),
+    home: BackendStartupGate(
       service: _wakeUpService,
       builder: (context) => FutureBuilder<GlowSenseDependencies>(
         future: _dependencies,
         builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Scaffold(
+              body: Center(
+                child: Text("Unable to initialize the application."),
+              ),
+            );
+          }
+
           final dependencies = snapshot.data;
+
           if (dependencies == null) {
             return const _LocalStorageLoading();
           }
+
           return GlowSenseApp(
             api: dependencies.api,
             storage: dependencies.storage,
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class GlowSenseDependencies {

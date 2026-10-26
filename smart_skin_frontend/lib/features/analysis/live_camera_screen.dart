@@ -22,11 +22,12 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
     try {
       cameras = await availableCameras();
       if (cameras == null || cameras!.isEmpty) return;
-      
+
       // Try to find front camera
       CameraDescription? frontCamera;
       try {
-        frontCamera = cameras!.firstWhere((c) => c.lensDirection == CameraLensDirection.front);
+        frontCamera = cameras!
+            .firstWhere((c) => c.lensDirection == CameraLensDirection.front);
       } catch (_) {
         frontCamera = cameras![0];
       }
@@ -82,7 +83,7 @@ class _LiveCameraScreenState extends State<LiveCameraScreen> {
         onPressed: () async {
           try {
             final image = await controller!.takePicture();
-            if (mounted) Navigator.pop(context, image.path);
+            if (mounted) Navigator.pop(context, image);
           } catch (e) {
             debugPrint("Capture Error: $e");
           }

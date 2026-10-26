@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../../bloc/analysis/analysis_bloc.dart';
 import '../../bloc/analysis/analysis_event.dart';
 import '../../bloc/analysis/analysis_state.dart';
@@ -21,17 +21,17 @@ class AnalysisScreen extends StatefulWidget {
 }
 
 class _AnalysisScreenState extends State<AnalysisScreen> {
-  File? _selectedImage;
+  XFile? _selectedImage;
   final _picker = ImagePicker();
 
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(source: source, imageQuality: 85);
-    if (picked != null) setState(() => _selectedImage = File(picked.path));
+    if (picked != null) setState(() => _selectedImage = picked);
   }
 
   void _analyze() {
     if (_selectedImage != null) {
-      context.read<AnalysisBloc>().add(SubmitAnalysis(_selectedImage!.path));
+      context.read<AnalysisBloc>().add(SubmitAnalysis(_selectedImage!));
     }
   }
 
@@ -93,12 +93,12 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
           return _UploadView(
             selectedImage: _selectedImage,
             onCamera: () async {
-              final path = await Navigator.push(
+              final image = await Navigator.push<XFile>(
                 context,
                 MaterialPageRoute(builder: (_) => const LiveCameraScreen()),
               );
-              if (path != null) {
-                setState(() => _selectedImage = File(path));
+              if (image != null) {
+                setState(() => _selectedImage = image);
               }
             },
             onGallery: () => _pickImage(ImageSource.gallery),
@@ -111,7 +111,7 @@ class _AnalysisScreenState extends State<AnalysisScreen> {
 }
 
 class _UploadView extends StatelessWidget {
-  final File? selectedImage;
+  final XFile? selectedImage;
   final VoidCallback onCamera, onGallery;
   final VoidCallback? onAnalyze;
 
@@ -146,7 +146,20 @@ class _UploadView extends StatelessWidget {
             child: selectedImage != null
                 ? ClipRRect(
                     borderRadius: BorderRadius.circular(22),
-                    child: Image.file(selectedImage!, fit: BoxFit.cover),
+                    child: FutureBuilder<List<int>>(
+                      future: selectedImage!.readAsBytes(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        return Image.memory(
+                          Uint8List.fromList(snapshot.data!),
+                          fit: BoxFit.cover,
+                        );
+                      },
+                    ),
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -292,7 +305,9 @@ class _ResultView extends StatelessWidget {
   double? get topProblemPercentage {
     final probabilities = result.modelProbabilities ?? {};
     if (probabilities.isEmpty) return result.modelConfidence;
-    return probabilities.entries.reduce((a, b) => a.value >= b.value ? a : b).value;
+    return probabilities.entries
+        .reduce((a, b) => a.value >= b.value ? a : b)
+        .value;
   }
 
   String get pharmaSkinType => _toHfSkinType(result.detectedSkinType);
@@ -301,7 +316,8 @@ class _ResultView extends StatelessWidget {
 
   List<RecommendationModel> get groqRecommendationsForTopProblem {
     final recommendations = result.recommandations;
-    if (recommendations.isEmpty) return _fallbackGroqLikeRecommendations(topProblem);
+    if (recommendations.isEmpty)
+      return _fallbackGroqLikeRecommendations(topProblem);
 
     final keywords = _problemKeywords(topProblem);
     final filtered = recommendations.where((recommendation) {
@@ -316,7 +332,8 @@ class _ResultView extends StatelessWidget {
     final base = filtered.isNotEmpty ? filtered : recommendations;
     final completed = [
       ...base,
-      ...recommendations.where((recommendation) => !base.contains(recommendation)),
+      ...recommendations
+          .where((recommendation) => !base.contains(recommendation)),
     ];
     if (completed.length < 3) {
       completed.addAll(_fallbackGroqLikeRecommendations(topProblem));
@@ -918,10 +935,11 @@ class _PharmaRecommendationsSectionState
 
   Future<List<Map<String, dynamic>>> _loadRecommendations() async {
     try {
-      final products = await context.read<ApiService>().getPharmaRecommendations(
-            skinType: widget.skinType,
-            problem: widget.problem,
-          );
+      final products =
+          await context.read<ApiService>().getPharmaRecommendations(
+                skinType: widget.skinType,
+                problem: widget.problem,
+              );
       if (products.isNotEmpty) return products.take(4).toList();
     } catch (_) {
       // The UI falls back to the existing Groq recommendations below.
@@ -989,7 +1007,6 @@ class _PharmaRecommendationsSectionState
               ),
               const SizedBox(height: 10),
               _ProblemBadge(problem: widget.problem),
-
               const SizedBox(height: 14),
               if (isLoading)
                 const Center(
@@ -1049,7 +1066,8 @@ class _GroqRecommendationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(recommendation.productType.isNotEmpty
+                    Text(
+                        recommendation.productType.isNotEmpty
                             ? recommendation.productType
                             : "Bio naturel",
                         style: const TextStyle(
@@ -1153,7 +1171,6 @@ class _PharmaProductCard extends StatelessWidget {
                           height: 1.35,
                           fontSize: 13)),
                 ],
-
               ],
             ),
           ),
