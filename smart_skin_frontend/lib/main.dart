@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'bloc/auth/auth_bloc.dart';
 import 'bloc/auth/auth_event.dart';
@@ -9,36 +8,84 @@ import 'bloc/dashboard/dashboard_bloc.dart';
 import 'bloc/analysis/analysis_bloc.dart';
 import 'bloc/coach/coach_bloc.dart';
 import 'bloc/notification/notification_bloc.dart';
-import 'constants/constants.dart';
 import 'constants/colors.dart';
 import 'data/services/api_service.dart';
+import 'data/services/backend_wakeup_service.dart';
 import 'data/services/local_storage_service.dart';
 import 'features/auth/login_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/onboarding/onboarding_flow.dart';
 import 'features/onboarding/welcome_screen.dart';
+import 'widgets/backend_startup_gate.dart';
 
-final GlobalKey<ScaffoldMessengerState> messengerKey = GlobalKey<ScaffoldMessengerState>();
-
-Future<void> _wakeUpServer() async {
-  try {
-    await Dio().get(
-      '${AppConstants.baseUrl}/actuator/health',
-      options: Options(
-        sendTimeout: const Duration(seconds: 2),
-        receiveTimeout: const Duration(seconds: 60),
-      ),
-    );
-  } catch (_) {}
-}
+final GlobalKey<ScaffoldMessengerState> messengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  _wakeUpServer();
-  final prefs = await SharedPreferences.getInstance();
-  final storage = LocalStorageService(prefs: prefs);
-  final api = ApiService(storage);
-  runApp(GlowSenseApp(api: api, storage: storage));
+  runApp(const GlowSenseBootstrap());
+}
+
+class GlowSenseBootstrap extends StatefulWidget {
+  const GlowSenseBootstrap({super.key});
+
+  @override
+  State<GlowSenseBootstrap> createState() => _GlowSenseBootstrapState();
+}
+
+class _GlowSenseBootstrapState extends State<GlowSenseBootstrap> {
+  final _wakeUpService = BackendWakeUpService();
+  late final Future<GlowSenseDependencies> _dependencies;
+
+  @override
+  void initState() {
+    super.initState();
+    _dependencies = SharedPreferences.getInstance().then((prefs) {
+      final storage = LocalStorageService(prefs: prefs);
+      return GlowSenseDependencies(api: ApiService(storage), storage: storage);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BackendStartupGate(
+      service: _wakeUpService,
+      builder: (context) => FutureBuilder<GlowSenseDependencies>(
+        future: _dependencies,
+        builder: (context, snapshot) {
+          final dependencies = snapshot.data;
+          if (dependencies == null) {
+            return const _LocalStorageLoading();
+          }
+          return GlowSenseApp(
+            api: dependencies.api,
+            storage: dependencies.storage,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class GlowSenseDependencies {
+  const GlowSenseDependencies({required this.api, required this.storage});
+
+  final ApiService api;
+  final LocalStorageService storage;
+}
+
+class _LocalStorageLoading extends StatelessWidget {
+  const _LocalStorageLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.backgroundLight,
+      body: Center(
+        child: CircularProgressIndicator(color: AppColors.primaryPink),
+      ),
+    );
+  }
 }
 
 class GlowSenseApp extends StatelessWidget {
@@ -56,7 +103,9 @@ class GlowSenseApp extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => AuthBloc(api: api, storage: storage)..add(const CheckAuthStatus())),
+          BlocProvider(
+              create: (_) => AuthBloc(api: api, storage: storage)
+                ..add(const CheckAuthStatus())),
           BlocProvider(create: (_) => DashboardBloc(api: api)),
           BlocProvider(create: (_) => AnalysisBloc(api: api)),
           BlocProvider(create: (_) => CoachBloc(api: api)),
@@ -106,7 +155,8 @@ class _AppRouter extends StatelessWidget {
                   children: [
                     CircularProgressIndicator(color: AppColors.primaryPink),
                     SizedBox(height: 16),
-                    Text("Préparation de votre univers...", style: TextStyle(color: AppColors.textGrey)),
+                    Text("Préparation de votre univers...",
+                        style: TextStyle(color: AppColors.textGrey)),
                   ],
                 ),
               ),
@@ -122,7 +172,8 @@ class _AppRouter extends StatelessWidget {
           // 3. PAR DÉFAUT : BIENVENUE
           return WelcomeScreen(
             onFinished: () {
-              Navigator.of(ctx).push(MaterialPageRoute(builder: (_) => const LoginScreen()));
+              Navigator.of(ctx)
+                  .push(MaterialPageRoute(builder: (_) => const LoginScreen()));
             },
           );
         },
